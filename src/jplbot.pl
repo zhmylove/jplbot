@@ -9,7 +9,7 @@ no warnings 'experimental';
 use Net::Jabber::Bot;
 use Storable;
 
-### USER VARIABLES SECTION START ###
+### USER VARIABLES SECTION START #############################################
 #
 # Nick name and XMPP resource name used by bot. 
 my $name = 'AimBot';
@@ -30,7 +30,7 @@ my $conference_server = 'conference.jabber.ru';
 # MUC forums (chatrooms) with their passwords
 my %forum_passwords = ('ubuntulinux' => 'ubuntu');
 #
-### USER VARIABLES SECTION END   ###
+### USER VARIABLES SECTION END   #############################################
 
 my $qname = quotemeta($name);
 store {}, $karmafile unless -r $karmafile;
