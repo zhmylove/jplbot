@@ -10,6 +10,7 @@ The command list follows:
 * user: --
 * fortune        -- show random thesis from fortune(6).
 
+Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.ru/web/korg/home/-/blogs/пишем-простенького-jabber-бота-на-perl)
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
 
 ## Dependencies
