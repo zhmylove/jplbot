@@ -58,14 +58,17 @@ sub new_bot_message {
    my $to_me = ($msg{'body'} =~ s{^$qname: }{});
 
    given ($msg{'body'}) {
+
       when (/^time\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: " . time);
       }
+
       when (/^help\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: пробуй так: fortune karma time");
       }
+
       when (/^fortune\s*$/i) {
          my $fortune = `/usr/games/fortune -s`;
          chomp $fortune;
@@ -74,26 +77,31 @@ sub new_bot_message {
             "$from: $fortune");
          sleep 1;
       }
+
       when (/^karma\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: твоя карма: " . ($karma{lc($from)}||0));
       }
+
       when (/^karma\s*(\w+)$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: карма $1: " . ($karma{lc($1)}||0));
       }
+
       when (/^(\w+):\s*\+[+1]\s*$/) {
          return if $1 eq $from;
          $karma{lc($1)}++;
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: поднял карму $1 до " . $karma{lc($1)});
       }
+
       when (/^(\w+):\s*\-[-1]\s*$/) {
          return if $1 eq $from;
          $karma{lc($1)}--;
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: опустил карму $1 до " . $karma{lc($1)});
       }
+
       default {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: how about no, братиша?") if $to_me;
@@ -102,7 +110,7 @@ sub new_bot_message {
 }
 
 my %forum_list;
-$forum_list{$_} = [] for (keys %forum_passwords); # [] due to Bot.pm.patch
+$forum_list{$_} = [] for keys %forum_passwords; # [] due to Bot.pm.patch
 
 my $bot = Net::Jabber::Bot->new(
    server => $server,
