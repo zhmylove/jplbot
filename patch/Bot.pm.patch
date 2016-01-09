@@ -1,55 +1,85 @@
-52c52
-<                                                                        $self->username .
----
->                                                                        (defined $self->username ? $self->username : "username") .
-54c54
-<                                                                        $self->server .
----
->                                                                        (defined $self->server ? $self->server : "server") .
-56c56
-<                                                                        $self->alias});
----
->                                                                        ($self->alias ? $self->alias : "alias")});
-62a63
-> has 'forums_passwords'       => (isa => HashRef[Str], is => 'rw'); # List of forums passwords.
-425c426
-<         $self->JoinForum($forum);
----
->         $self->JoinForum($forum, $self->forums_passwords->{$forum});
-445a447
->     my $forum_pass = shift;
-451a454
->                                   password => $forum_pass,
-652c655,656
-<     my @aliases_to_respond_to = $self->get_responses($from);
----
->     ## Parse messages from any alias.
->     #my @aliases_to_respond_to = $self->get_responses($from);
-654,666c658,670
-<     if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
-<         my $request;
-<         foreach my $address_type (@aliases_to_respond_to) {
-<             my $qm_address_type = quotemeta($address_type);
-<             next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
-<             $request = $1;
-<             $bot_address_from = $address_type;
-<             last; # do not need to loop any more.
-<         }
-<         DEBUG("Message not relevant to bot");
-<         return if(!defined $request);
-<         $body = $request;
-<     }
----
->     #if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
->     #    my $request;
->     #    foreach my $address_type (@aliases_to_respond_to) {
->     #        my $qm_address_type = quotemeta($address_type);
->     #        next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
->     #        $request = $1;
->     #        $bot_address_from = $address_type;
->     #        last; # do not need to loop any more.
->     #    }
->     #    DEBUG("Message not relevant to bot");
->     #    return if(!defined $request);
->     #    $body = $request;
->     #}
+--- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
++++ Bot.pm	2016-01-09 21:38:27.549286938 +0300
+@@ -49,17 +49,18 @@
+ has 'loop_sleep_time'     => (isa => PosNum, is => 'rw', default => 5);
+ has 'process_timeout'     => (isa => PosNum, is => 'rw', default => 5);
+ has 'from_full'           => (isa => Str, is => 'rw', default => sub{my $self = shift;
+-                                                                       $self->username .
++                                                                       (defined $self->username ? $self->username : "username") .
+                                                                        '@' .
+-                                                                       $self->server .
++                                                                       (defined $self->server ? $self->server : "server") .
+                                                                        '/' .
+-                                                                       $self->alias});
++                                                                       ($self->alias ? $self->alias : "alias")});
+                                                                        
+ 
+ has 'safety_mode'            => (isa => Bool, is => 'rw', default => 1, coerce => 1);
+ has 'ignore_server_messages' => (isa => Bool, is => 'rw', default => 1, coerce => 1);
+ has 'ignore_self_messages'   => (isa => Bool, is => 'rw', default => 1, coerce => 1);
+ has 'forums_and_responses'   => (isa => HashRef[ArrayRef[Str]], is => 'rw'); # List of forums we're in and the strings we monitor for.
++has 'forums_passwords'       => (isa => HashRef[Str], is => 'rw'); # List of forums passwords.
+ has 'forum_join_time'        => (isa => HashRef[Int], is => 'rw', default => sub{{}}); # List of when we joined each forum
+ has 'out_messages_per_second' => (isa => PosNum, is => 'rw', default => sub{5});
+ has 'message_delay'           => (isa => PosNum, is => 'rw', default => sub {1/5});
+@@ -422,7 +423,7 @@
+     $self->Process(5);
+ 
+     foreach my $forum (keys %{$self->forums_and_responses}) {
+-        $self->JoinForum($forum);
++        $self->JoinForum($forum, $self->forums_passwords->{$forum});
+     }
+ 
+     INFO("Connected to server '" . $self->server . "' successfully");
+@@ -443,12 +444,14 @@
+ sub JoinForum {
+     my $self = shift;
+     my $forum_name = shift;
++    my $forum_pass = shift;
+ 
+     DEBUG("Joining $forum_name on " . $self->conference_server . " as " . $self->alias);
+ 
+     $self->jabber_client->MUCJoin(room    => $forum_name,
+                                   server => $self->conference_server,
+                                   nick   => $self->alias,
++                                  password => $forum_pass,
+                                   );
+ 
+     $self->forum_join_time->{$forum_name} = time;
+@@ -649,21 +652,22 @@
+ 
+     # Determine if this message was addressed to me. (groupchat only)
+     my $bot_address_from;
+-    my @aliases_to_respond_to = $self->get_responses($from);
++    ## Parse messages from any alias.
++    #my @aliases_to_respond_to = $self->get_responses($from);
+ 
+-    if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
+-        my $request;
+-        foreach my $address_type (@aliases_to_respond_to) {
+-            my $qm_address_type = quotemeta($address_type);
+-            next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
+-            $request = $1;
+-            $bot_address_from = $address_type;
+-            last; # do not need to loop any more.
+-        }
+-        DEBUG("Message not relevant to bot");
+-        return if(!defined $request);
+-        $body = $request;
+-    }
++    #if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
++    #    my $request;
++    #    foreach my $address_type (@aliases_to_respond_to) {
++    #        my $qm_address_type = quotemeta($address_type);
++    #        next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
++    #        $request = $1;
++    #        $bot_address_from = $address_type;
++    #        last; # do not need to loop any more.
++    #    }
++    #    DEBUG("Message not relevant to bot");
++    #    return if(!defined $request);
++    #    $body = $request;
++    #}
+ 
+     # Call the message callback if it's defined.
+     if( defined $self->message_function) {
