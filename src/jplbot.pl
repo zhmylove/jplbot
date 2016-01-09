@@ -10,14 +10,26 @@ use Net::Jabber::Bot;
 use Storable;
 
 ### USER VARIABLES SECTION START ###
+#
+# Nick name and XMPP resource name used by bot. 
 my $name = 'AimBot';
+# Path to file for karma saving routine
 my $karmafile = '/tmp/karma';
+# Address of XMPP server of the bot's account
 my $server = 'zhmylove.ru';
+# Port of XMPP server of the bot's account
 my $port = 5222;
+# Username of bot's account on the server
 my $username = 'aimbot';
+# Password for this username
 my $password = 'password';
+# Interval in seconds between background_checks() calee
 my $loop_sleep_time = 60;
+# Address of a conference server, where forums are expected to be
 my $conference_server = 'conference.jabber.ru';
+# MUC forums (chatrooms) with their passwords
+my %forum_passwords = ('ubuntulinux' => 'ubuntu');
+#
 ### USER VARIABLES SECTION END   ###
 
 my $qname = quotemeta($name);
@@ -89,8 +101,8 @@ sub new_bot_message {
    }
 }
 
-my %forum_list = ('ubuntulinux' => []); # [] due to Bot.pm.patch
-my %forum_passwords = ('ubuntulinux' => 'ubuntu');
+my %forum_list;
+$forum_list{$_} = [] for (keys %forum_passwords); # [] due to Bot.pm.patch
 
 my $bot = Net::Jabber::Bot->new(
    server => $server,
