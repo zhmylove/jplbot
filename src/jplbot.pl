@@ -9,8 +9,16 @@ no warnings 'experimental';
 use Net::Jabber::Bot;
 use Storable;
 
+### USER VARIABLES SECTION START ###
 my $name = 'AimBot';
 my $karmafile = '/tmp/karma';
+my $server = 'zhmylove.ru';
+my $port = 5222;
+my $username = 'aimbot';
+my $password = 'password';
+my $loop_sleep_time = 60;
+my $conference_server = 'conference.jabber.ru';
+### USER VARIABLES SECTION END   ###
 
 my $qname = quotemeta($name);
 store {}, $karmafile unless -r $karmafile;
@@ -85,17 +93,17 @@ my %forum_list = ('ubuntulinux' => []); # [] due to Bot.pm.patch
 my %forum_passwords = ('ubuntulinux' => 'ubuntu');
 
 my $bot = Net::Jabber::Bot->new(
-   server => 'zhmylove.ru',
-   conference_server => 'conference.jabber.ru',
-   port => 5222,
-   username => 'aimbot',
-   password => 'password',
+   server => $server,
+   conference_server => $conference_server,
+   port => $port,
+   username => $username,
+   password => $password,
    alias => $name,
    resource => $name,
    safety_mode => 1,
    message_function => \&new_bot_message,
    background_function => \&background_checks,
-   loop_sleep_time => 60,
+   loop_sleep_time => $loop_sleep_time,
    forums_and_responses => \%forum_list,
    forums_passwords => \%forum_passwords,
 );
