@@ -1,0 +1,55 @@
+52c52
+<                                                                        $self->username .
+---
+>                                                                        (defined $self->username ? $self->username : "username") .
+54c54
+<                                                                        $self->server .
+---
+>                                                                        (defined $self->server ? $self->server : "server") .
+56c56
+<                                                                        $self->alias});
+---
+>                                                                        ($self->alias ? $self->alias : "alias")});
+62a63
+> has 'forums_passwords'       => (isa => HashRef[Str], is => 'rw'); # List of forums passwords.
+425c426
+<         $self->JoinForum($forum);
+---
+>         $self->JoinForum($forum, $self->forums_passwords->{$forum});
+445a447
+>     my $forum_pass = shift;
+451a454
+>                                   password => $forum_pass,
+652c655,656
+<     my @aliases_to_respond_to = $self->get_responses($from);
+---
+>     ## Parse messages from any alias.
+>     #my @aliases_to_respond_to = $self->get_responses($from);
+654,666c658,670
+<     if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
+<         my $request;
+<         foreach my $address_type (@aliases_to_respond_to) {
+<             my $qm_address_type = quotemeta($address_type);
+<             next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
+<             $request = $1;
+<             $bot_address_from = $address_type;
+<             last; # do not need to loop any more.
+<         }
+<         DEBUG("Message not relevant to bot");
+<         return if(!defined $request);
+<         $body = $request;
+<     }
+---
+>     #if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
+>     #    my $request;
+>     #    foreach my $address_type (@aliases_to_respond_to) {
+>     #        my $qm_address_type = quotemeta($address_type);
+>     #        next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
+>     #        $request = $1;
+>     #        $bot_address_from = $address_type;
+>     #        last; # do not need to loop any more.
+>     #    }
+>     #    DEBUG("Message not relevant to bot");
+>     #    return if(!defined $request);
+>     #    $body = $request;
+>     #}
