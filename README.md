@@ -1,4 +1,4 @@
-# jbot
+# jplbot
 Simple jabber bot written in perl by KorG.
 The command list follows:
 * time           -- show time.
@@ -17,6 +17,6 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * cpan Net::Jabber::Bot
 
 ## Files
-* src/jbot.pl         -- main executable file.
+* src/jplbot.pl         -- main executable file.
 * patch/Bot.pm.patch  -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
 
