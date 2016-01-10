@@ -62,6 +62,27 @@ sub new_bot_message {
 
    given ($msg{'body'}) {
 
+      when (/^добро\w*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$from: и тебе доброе утро!");
+      }
+
+      when (/^ку[\s!]*/i || /^(?:всем\s*)?прив\w*[.!\s]*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "Привет, $from!");
+      }
+
+      when (/^пыщь?(?:-пыщь?)?[!.\s]*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$from: пыщь-пыщь, дави прыщь!");
+      }
+
+      when (/^(?:доброй|спокойной)?\s*ночи[.\s!]*$/i ||
+         /^[\w.,\s]*[шс]пать[!.\s]*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "Сладких снов!");
+      }
+
       when (/^date\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: " . localtime);
@@ -112,57 +133,63 @@ sub new_bot_message {
       when (m{(https?://\S+)}) {
          my $uri = $1;
          my $ua = LWP::UserAgent->new();
+         my %type;
          $ua->timeout(10);
          $ua->env_proxy;
          $ua->agent('Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:46.0)' .
             'Gecko/20100101 Firefox/46.0');
 
-         my $response = $ua->request(
-            HTTP::Request->new(HEAD => $uri)
-         );
+         $ua->add_handler(response_header => sub {
+               my $response = shift;
 
-         if ($response->code < 200 or $response->code > 299) {
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: сервер вернул код: " .
-               $response->code . ", разбирайся сам!");
-            return;
-         }
+               if (scalar $response->code >= 400) {
+                  $bot->SendGroupMessage($msg{'reply_to'},
+                     "$from: сервер вернул код: " .
+                     $response->code . ", разбирайся сам!");
 
-         my %type;
-         foreach($response->header("Content-type")){
-            given ($_) {
-               when (m{^text/html}) { $type{'html'}++; }
-               when (m{^image/}) { $type{'image'}++; }
-            }
-         }
+                  die;
+               }
 
-         if ($type{'html'}) {
-            my $response = $ua->request(
-               HTTP::Request->new(GET => $uri)
-            );
-            my $content = $response->decoded_content;
-            $content =~ m{.*<title[^>]*>(.*?)</title.*}i;
-            
-            my $title = $1;
-            if ((defined $title ? $title : "") eq "") {
-               $title = $uri;
-               $title =~ s{^https?://([^/]+)/.*$}{$1};
-            }
+               foreach($response->header("Content-type")){
+                  given ($_) {
+                     when (m{^text/html} || /korg/) { $type{'html'}++; }
+                     when (m{^image/}) { $type{'image'}++; }
+                  }
+               }
+               if ($type{'image'}) {
+                  my $length = $response->header('Content-Length');
+                  $length = -1 unless $length > 0;
 
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: title: $title");
-         } elsif ($type{'image'}) {
-            my $length = $response->header('Content-Length');
-            $length = -1 unless $length > 0;
+                  while($length=~s/(?<=\d)(?=\d{3}\b)/ /){}
 
-            while($length=~s/(?<=\d)(?=\d{3}\b)/ /){}
+                  $bot->SendGroupMessage($msg{'reply_to'},
+                     "$from: Content-Length: $length байт.");
 
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: Content-Length: $length байт.");
-         } else {
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: да ну нафиг это парсить...");
-         }
+                  die;
+               }
+            });
+
+         $ua->add_handler(response_data => sub {
+               my $response = shift;
+               if ($type{'html'}) {
+                  my $content = $response->decoded_content;
+                  $content =~ m{.*<title[^>]*>(.*?)</title.*}i;
+
+                  my $title = $1;
+                  if ((defined $title ? $title : "") eq "") {
+                     $title = $uri;
+                     $title =~ s{^https?://([^/]+)/.*$}{$1};
+                  }
+
+                  $bot->SendGroupMessage($msg{'reply_to'},
+                     "$from: title: $title");
+               } else {
+                  $bot->SendGroupMessage($msg{'reply_to'},
+                     "$from: да ну нафиг это парсить...");
+               }
+            });
+
+         my $response = $ua->get($uri);
       }
 
       default {
