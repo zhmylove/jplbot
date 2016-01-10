@@ -8,29 +8,32 @@ no warnings 'experimental';
 
 use Net::Jabber::Bot;
 use Storable;
+use LWP;
 
-### USER VARIABLES SECTION START #############################################
-#
-# Nick name and XMPP resource name used by bot. 
-my $name = 'AimBot';
+### DEFAULT VALUES ###
+our $name = 'AimBot';
 # Path to file for karma saving routine
-my $karmafile = '/tmp/karma';
+our $karmafile = '/tmp/karma';
 # Address of XMPP server of the bot's account
-my $server = 'zhmylove.ru';
+our $server = 'zhmylove.ru';
 # Port of XMPP server of the bot's account
-my $port = 5222;
+our $port = 5222;
 # Username of bot's account on the server
-my $username = 'aimbot';
+our $username = 'aimbot';
 # Password for this username
-my $password = 'password';
+our $password = 'password';
 # Interval in seconds between background_checks() calee
-my $loop_sleep_time = 60;
+our $loop_sleep_time = 60;
 # Address of a conference server, where forums are expected to be
-my $conference_server = 'conference.jabber.ru';
+our $conference_server = 'conference.jabber.ru';
 # MUC forums (chatrooms) with their passwords
-my %forum_passwords = ('ubuntulinux' => 'ubuntu');
-#
-### USER VARIABLES SECTION END   #############################################
+our %forum_passwords = ('ubuntulinux' => 'ubuntu');
+
+unless (my $ret = do './config.pl') {
+   warn "couldn't parse config.pl: $@" if $@;
+   warn "couldn't do config.pl: $!"    unless defined $ret;
+   warn "couldn't run config.pl"       unless $ret;
+}
 
 my $qname = quotemeta($name);
 store {}, $karmafile unless -r $karmafile;
@@ -100,6 +103,43 @@ sub new_bot_message {
          $karma{lc($1)}--;
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: опустил карму $1 до " . $karma{lc($1)});
+      }
+
+      when (m{(https?://\S+)}) {
+         my $uri = $1;
+         my $ua = LWP::UserAgent->new();
+         $ua->timeout(10);
+         $ua->env_proxy;
+         $ua->agent('Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0');
+
+         my $response = $ua->request(
+            HTTP::Request->new(HEAD => $uri)
+         );
+
+         my %type;
+         foreach($response->header("Content-type")){
+            given ($_) {
+               when (m{^text/html}) { $type{'html'}++; }
+               when (m{^image/}) { $type{'image'}++; }
+            }
+         }
+
+         if ($type{'html'}) {
+            my $response = $ua->request(
+               HTTP::Request->new(GET => $uri)
+            );
+            my $content = $response->decoded_content;
+            $content =~ m{.*<title[^>]*>(.*?)</title.*}i;
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "$from: Title: $1");
+         } elsif ($type{'image'}) {
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "$from: Content-Length: " .
+               $response->header('Content-Length') . " байт.");
+         } else {
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "$from: да ну нафиг это парсить...");
+         }
       }
 
       default {
