@@ -1,5 +1,5 @@
 --- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
-+++ Bot.pm	2016-01-09 21:38:27.549286938 +0300
++++ Bot.pm	2016-01-10 04:10:33.630669276 +0300
 @@ -49,17 +49,18 @@
  has 'loop_sleep_time'     => (isa => PosNum, is => 'rw', default => 5);
  has 'process_timeout'     => (isa => PosNum, is => 'rw', default => 5);
@@ -46,14 +46,12 @@
                                    );
  
      $self->forum_join_time->{$forum_name} = time;
-@@ -649,21 +652,22 @@
+@@ -649,21 +652,7 @@
  
      # Determine if this message was addressed to me. (groupchat only)
      my $bot_address_from;
 -    my @aliases_to_respond_to = $self->get_responses($from);
-+    ## Parse messages from any alias.
-+    #my @aliases_to_respond_to = $self->get_responses($from);
- 
+-
 -    if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
 -        my $request;
 -        foreach my $address_type (@aliases_to_respond_to) {
@@ -67,19 +65,27 @@
 -        return if(!defined $request);
 -        $body = $request;
 -    }
-+    #if($#aliases_to_respond_to >= 0 and $type eq 'groupchat') {
-+    #    my $request;
-+    #    foreach my $address_type (@aliases_to_respond_to) {
-+    #        my $qm_address_type = quotemeta($address_type);
-+    #        next if($body !~ m/^\s*$qm_address_type\s*(\S.*)$/ms);
-+    #        $request = $1;
-+    #        $bot_address_from = $address_type;
-+    #        last; # do not need to loop any more.
-+    #    }
-+    #    DEBUG("Message not relevant to bot");
-+    #    return if(!defined $request);
-+    #    $body = $request;
-+    #}
++    # Here was a block of code; deleted to parse messages agntostic to alias.
  
      # Call the message callback if it's defined.
      if( defined $self->message_function) {
+@@ -896,7 +885,8 @@
+ Assures message size does not exceed a limit and chops it into pieces if need be.
+ 
+ NOTE: non-printable characters (unicode included) will be stripped before sending to the server via:
+-    s/[^[:print:]]+/./xmsg
++    s/\t+/ /g
++    s/[^\n\p{IsPrint}]/./g
+ 
+ =cut
+ 
+@@ -989,7 +979,8 @@
+ 
+     # Strip out anything that's not a printable character
+     # Now with unicode support?
+-    $message_chunk =~ s/[^[:print:]]+/./xmsg; 
++    $message_chunk =~ s/\t/ /g; 
++    $message_chunk =~ s/[^\n\p{IsPrint}]/./g; 
+ 
+     my $message_length = length($message_chunk);
+     DEBUG("Sending message $yday-$hour-$messages_this_hour $message_length bytes to $recipient");
