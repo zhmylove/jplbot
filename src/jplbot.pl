@@ -80,7 +80,6 @@ sub new_bot_message {
       when (/^fortune\s*$/i) {
          my $fortune = `/usr/games/fortune -s`;
          chomp $fortune;
-         $fortune =~ s/[\n\t]+/ /g;
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: $fortune");
          sleep 1;
