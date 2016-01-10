@@ -16,6 +16,7 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 ## Dependencies
 * cpan Net::Jabber
 * cpan Net::Jabber::Bot
+* cpan LWP::Protocol::https
 
 ## Files
 * src/jplbot.pl         -- main executable file.
