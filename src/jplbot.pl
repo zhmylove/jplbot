@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 use v5.18;
-use utf8;
 no warnings 'experimental';
+use utf8;
 
 use Net::Jabber::Bot;
 use Storable;
@@ -24,15 +24,17 @@ our %forum_passwords = ('ubuntulinux' => 'ubuntu');
 
 unless (my $ret = do './config.pl') {
    warn "couldn't parse config.pl: $@" if $@;
-   warn "couldn't do config.pl: $!"    unless defined $ret;
-   warn "couldn't run config.pl"       unless $ret;
+   warn "couldn't do config.pl: $!" unless defined $ret;
+   warn "couldn't run config.pl" unless $ret;
 }
 
-my $qname = quotemeta($name);
 store {}, $karmafile unless -r $karmafile;
 my %karma = %{retrieve($karmafile)};
+
+my $qname = quotemeta($name);
 $SIG{INT} = \&shutdown;
 $SIG{TERM} = \&shutdown;
+binmode STDOUT, ':utf8';
 
 sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
@@ -52,6 +54,12 @@ sub new_bot_message {
    $from =~ s{^.+/([^/]+)$}{$1};
 
    my $to_me = ($msg{'body'} =~ s{^$qname: }{});
+
+   if ($msg{'type'} eq "chat") {
+      $bot->SendPersonalMessage($msg{'reply_to'},
+         "Прости, $from, сегодня я слишком голоден, чтобы общаться лично...");
+      return;
+   }
 
    given ($msg{'body'}) {
 
