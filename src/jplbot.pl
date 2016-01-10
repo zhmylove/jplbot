@@ -157,6 +157,7 @@ sub new_bot_message {
                      when (m{^image/}) { $type{'image'}++; }
                   }
                }
+
                if ($type{'image'}) {
                   my $length = $response->header('Content-Length');
                   $length = -1 unless $length > 0;
@@ -170,14 +171,19 @@ sub new_bot_message {
                }
             });
 
-         $ua->add_handler(response_data => sub {
+         $ua->add_handler(response_done => sub {
                my $response = shift;
-               if ($type{'html'}) {
-                  my $content = $response->decoded_content;
-                  $content =~ m{.*<title[^>]*>(.*?)</title.*}i;
 
-                  my $title = $1;
-                  if ((defined $title ? $title : "") eq "") {
+               if ($type{'image'}) {
+                  # do nothing for all other chunks of response
+               } elsif ($type{'html'}) {
+                  my $content = $response->decoded_content;
+
+                  $content =~ m{.*<title[^>]*>(.*?)</title.*}si;
+
+                  my $title = defined $1 ? $1 : "";
+
+                  if ($title eq "") {
                      $title = $uri;
                      $title =~ s{^https?://([^/]+)/.*$}{$1};
                   }
