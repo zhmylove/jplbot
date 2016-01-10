@@ -10,23 +10,16 @@ use Net::Jabber::Bot;
 use Storable;
 use LWP;
 
-### DEFAULT VALUES ###
+# DEFAULT VALUES, don't change them here
+# See comments in the 'config.pl'
 our $name = 'AimBot';
-# Path to file for karma saving routine
 our $karmafile = '/tmp/karma';
-# Address of XMPP server of the bot's account
 our $server = 'zhmylove.ru';
-# Port of XMPP server of the bot's account
 our $port = 5222;
-# Username of bot's account on the server
 our $username = 'aimbot';
-# Password for this username
 our $password = 'password';
-# Interval in seconds between background_checks() calee
 our $loop_sleep_time = 60;
-# Address of a conference server, where forums are expected to be
 our $conference_server = 'conference.jabber.ru';
-# MUC forums (chatrooms) with their passwords
 our %forum_passwords = ('ubuntulinux' => 'ubuntu');
 
 unless (my $ret = do './config.pl') {
@@ -62,23 +55,23 @@ sub new_bot_message {
 
    given ($msg{'body'}) {
 
-      when (/^добро\w*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
+      when (/^(?:добро|все)\w*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: и тебе доброе утро!");
       }
 
-      when (/^ку[\s!]*/i || /^(?:всем\s*)?прив\w*[.!\s]*$/i) {
+      when (/^ку[\s!]*/i || /^(?:всем\s*)?прив\w*[.\s!]*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "Привет, $from!");
       }
 
-      when (/^пыщь?(?:-пыщь?)?[!.\s]*$/i) {
+      when (/^пыщь?(?:-пыщь?)?[.\s!]*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: пыщь-пыщь, дави прыщь!");
       }
 
       when (/^(?:доброй|спокойной)?\s*ночи[.\s!]*$/i ||
-         /^[\w.,\s]*[шс]пать[!.\s]*$/i) {
+         /^[\w.,\s]*[шс]пать[.\s!]*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "Сладких снов!");
       }
@@ -182,7 +175,7 @@ sub new_bot_message {
                   }
 
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$from: title: $title");
+                     "$from: заголовок: $title");
                } else {
                   $bot->SendGroupMessage($msg{'reply_to'},
                      "$from: да ну нафиг это парсить...");
@@ -194,7 +187,7 @@ sub new_bot_message {
 
       default {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: how about no, братиша?") if $to_me;
+            "$from: how about NO, братиша?") if $to_me;
       }
    }
 }
