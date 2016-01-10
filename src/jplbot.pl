@@ -62,6 +62,11 @@ sub new_bot_message {
 
    given ($msg{'body'}) {
 
+      when (/^date\s*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$from: " . localtime);
+      }
+
       when (/^time\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: " . time);
@@ -69,7 +74,7 @@ sub new_bot_message {
 
       when (/^help\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: пробуй так: fortune karma time");
+            "$from: пробуй так: date fortune karma time");
       }
 
       when (/^fortune\s*$/i) {
@@ -141,9 +146,11 @@ sub new_bot_message {
             $bot->SendGroupMessage($msg{'reply_to'},
                "$from: title: $1");
          } elsif ($type{'image'}) {
+            my $length = $response->header('Content-Length');
+            while($length=~s/(?<=\d)(?=\d{3}\b)/ /){}
+
             $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: Content-Length: " .
-               $response->header('Content-Length') . " байт.");
+               "$from: Content-Length: $length байт.");
          } else {
             $bot->SendGroupMessage($msg{'reply_to'},
                "$from: да ну нафиг это парсить...");

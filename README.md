@@ -2,6 +2,7 @@
 Simple jabber bot written in perl by KorG.
 The command list follows:
 * time           -- show time.
+* date           -- show date & time.
 * help           -- show help message.
 * karma [user]   -- show specified user's karma (yours by default).
 * user: ++       -- increment or decrement specified user's karma.
