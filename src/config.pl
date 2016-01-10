@@ -18,5 +18,14 @@ $loop_sleep_time = 60;
 $conference_server = 'conference.jabber.ru';
 # MUC forums (chatrooms) with their passwords
 %forum_passwords = ('ubuntulinux' => 'ubuntu');
+# All colors, selected for the bombs
+@colors = (
+   'бело-оранжевый', 'оранжевый',
+   'бело-зелёный', 'зелёный',
+   'бело-синий', 'синий',
+   'бело-коричневый', 'коричневый',
+);
+# Minimum number of colors to select from @colors
+$minimum_colors = 3;
 #
 ### USER VARIABLES SECTION END   #############################################
