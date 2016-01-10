@@ -9,6 +9,7 @@ The command list follows:
 * user: -1
 * user: --
 * fortune        -- show random thesis from fortune(6).
+* http://uri     -- show information about first found URI.
 
 Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.ru/web/korg/home/-/blogs/пишем-простенького-jabber-бота-на-perl).  
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
@@ -20,5 +21,6 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 
 ## Files
 * src/jplbot.pl         -- main executable file.
+* src/config.pl         -- configuration file included when needed.
 * patch/Bot.pm.patch  -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
 
