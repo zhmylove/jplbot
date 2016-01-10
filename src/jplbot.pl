@@ -110,11 +110,19 @@ sub new_bot_message {
          my $ua = LWP::UserAgent->new();
          $ua->timeout(10);
          $ua->env_proxy;
-         $ua->agent('Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:46.0) Gecko/20100101 Firefox/46.0');
+         $ua->agent('Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:46.0)' .
+            'Gecko/20100101 Firefox/46.0');
 
          my $response = $ua->request(
             HTTP::Request->new(HEAD => $uri)
          );
+
+         if ($response->code < 200 or $response->code > 299) {
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "$from: сервер вернул код: " .
+               $response->code . ", разбирайся сам!");
+            return;
+         }
 
          my %type;
          foreach($response->header("Content-type")){
@@ -131,7 +139,7 @@ sub new_bot_message {
             my $content = $response->decoded_content;
             $content =~ m{.*<title[^>]*>(.*?)</title.*}i;
             $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: Title: $1");
+               "$from: title: $1");
          } elsif ($type{'image'}) {
             $bot->SendGroupMessage($msg{'reply_to'},
                "$from: Content-Length: " .
