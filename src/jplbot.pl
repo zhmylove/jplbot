@@ -142,10 +142,19 @@ sub new_bot_message {
             );
             my $content = $response->decoded_content;
             $content =~ m{.*<title[^>]*>(.*?)</title.*}i;
+            
+            my $title = $1;
+            if ((defined $title ? $title : "") eq "") {
+               $title = $uri;
+               $title =~ s{^https?://([^/]+)/.*$}{$1};
+            }
+
             $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: title: $1");
+               "$from: title: $title");
          } elsif ($type{'image'}) {
             my $length = $response->header('Content-Length');
+            $length = -1 unless $length > 0;
+
             while($length=~s/(?<=\d)(?=\d{3}\b)/ /){}
 
             $bot->SendGroupMessage($msg{'reply_to'},
