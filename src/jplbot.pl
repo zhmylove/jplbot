@@ -118,7 +118,7 @@ sub new_bot_message {
 
       when (/(?:ubunt|убунт)/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "убунта нинужна >_<");
+            "убунта нинужна >_<") if int(2*rand);
       }
 
       when (/^(?:(?:добро|все|ребя)\w*)*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
@@ -161,7 +161,7 @@ sub new_bot_message {
             "$from: твоя карма: " . ($karma{lc($from)}||0));
       }
 
-      when (/^karma\s*(\w+)$/i) {
+      when (/^karma\s*(\S+)$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: карма $1: " . ($karma{lc($1)}||0));
       }
@@ -171,7 +171,7 @@ sub new_bot_message {
             "$from: бомба -- это не игрушки!");
       }
 
-      when (/^bomb\s*(\w+)$/i) {
+      when (/^bomb\s*(\S+)$/i) {
          my $name = $1;
 
          if ($from eq $name) {
@@ -219,14 +219,14 @@ sub new_bot_message {
          $bot->SendGroupMessage($msg{'reply_to'}, $txt);
       }
 
-      when (/^(\w+):\s*\+[+1]\s*$/) {
+      when (/^(\w+):\s*\+[+1]+\s*$/) {
          return if $1 eq $from;
          $karma{lc($1)}++;
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: поднял карму $1 до " . $karma{lc($1)});
       }
 
-      when (/^(\w+):\s*\-[-1]\s*$/) {
+      when (/^(\w+):\s*\-[-1]+\s*$/) {
          return if $1 eq $from;
          $karma{lc($1)}--;
          $bot->SendGroupMessage($msg{'reply_to'},
