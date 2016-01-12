@@ -5,7 +5,7 @@ The command list follows:
 * date           -- show date & time.
 * help           -- show help message.
 * karma [user]   -- show specified user's karma (yours by default).
-* bomb [user]    -- put the bomb on the user or taunt unless argument passed.
+* bomb [user]    -- put a bomb on the user or taunt unless argument passed.
 * user: ++       -- increment or decrement specified user's karma.
 * user: +1
 * user: -1

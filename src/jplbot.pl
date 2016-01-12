@@ -35,19 +35,23 @@ unless (my $ret = do './config.pl') {
    warn "couldn't run config.pl" unless $ret;
 }
 
+srand;
 store {}, $karmafile unless -r $karmafile;
 my %karma = %{retrieve($karmafile)};
+my $last_bomb_time = 0;
 my %bomb_time;
 my %bomb_correct;
 my %bomb_resourse;
 my %bomb_nick;
-srand;
 my $col_count = int($minimum_colors + ($#colors - $minimum_colors + 1) * rand);
+my %col_hash;
+$col_hash{lc($_)} = 1 for @colors;
 
 my $qname = quotemeta($name);
 $SIG{INT} = \&shutdown;
 $SIG{TERM} = \&shutdown;
 binmode STDOUT, ':utf8';
+my $bot_address = "https://github.com/tune-it/jplbot";
 
 sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
@@ -57,20 +61,28 @@ sub shutdown {
 sub bomb_user {
    my ($bot, $user) = @_;
    my $to = $bomb_resourse{lc($user)};
-   my $name = $bomb_nick{lc($user)};
+   my $nick = $bomb_nick{lc($user)};
 
    delete $bomb_time{lc($user)};
    delete $bomb_correct{lc($user)};
    delete $bomb_resourse{lc($user)};
    delete $bomb_nick{lc($user)};
 
-   $bot->SendGroupMessage($to, "$name: ты взорвался!");
+   $bot->SendGroupMessage($to, "$nick: ты взорвался!");
+
+   my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$to' " .
+   "type='set'><query xmlns='http://jabber.org/protocol/muc#admin'><item " .
+   "nick='$nick' role='none'><reason>Bombed!</reason></item></query></iq>";
+
+   $bot->jabber_client->SendXML($xml);
 }
 
 sub background_checks {
    my $bot = shift;
    store \%karma, $karmafile;
-   foreach(keys %bomb_time){ bomb_user($bot, $_) if (time > $bomb_time{lc($_)} + 60); }
+   foreach(keys %bomb_time){
+      bomb_user($bot, $_) if (time > $bomb_time{lc($_)} + 60);
+   }
 }
 
 sub new_bot_message {
@@ -87,32 +99,12 @@ sub new_bot_message {
 
    if ($msg{'type'} eq "chat") {
       $bot->SendPersonalMessage($msg{'reply_to'},
-         "Прости, $from, сегодня я слишком голоден, чтобы общаться лично...");
+         "Я не работаю в привате. Если Вы нашли проблему, у Вас есть предложения или " .
+         "пожелания, пишите issue на $bot_address");
       return;
    }
 
    given ($msg{'body'}) {
-
-      when (/^(?:добро|все)\w*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: и тебе доброе утро!");
-      }
-
-      when (/^ку[\s!]*/i || /^(?:всем\s*)?прив\w*[.\s!]*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "Привет, $from!");
-      }
-
-      when (/^пыщь?(?:-пыщь?)?[.\s!]*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: пыщь-пыщь, дави прыщь!");
-      }
-
-      when (/^(?:доброй|спокойной)?\s*ночи[.\s!]*$/i ||
-         /^[\w.,\s]*[шс]пать[.\s!]*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "Сладких снов!");
-      }
 
       when (/^date\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
@@ -122,6 +114,33 @@ sub new_bot_message {
       when (/^time\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: " . time);
+      }
+
+      when (/(?:ubunt|убунт)/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "убунта нинужна >_<");
+      }
+
+      when (/^(?:(?:добро|все|ребя)\w*)*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$from: и тебе доброе утро!");
+      }
+
+      when (/^ку[\s!]*\b/i || /^(?:всем\s*)?прив\w*[.\s!]*$/i ||
+         /^здаро\w*\s*/) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "Привет, привет!");
+      }
+
+      when (/^пыщь?(?:-пыщь?)?[.\s!]*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$from: пыщь-пыщь, дави прыщь!");
+      }
+
+      when (/^(?:доброй|спокойной|всем)?\s*ночи[.\s!]*$/i ||
+         /^[\w.,\s]*[шс]пать[.\s!]*$/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "Сладких снов!");
       }
 
       when (/^help\s*$/i) {
@@ -155,11 +174,25 @@ sub new_bot_message {
       when (/^bomb\s*(\w+)$/i) {
          my $name = $1;
 
+         if ($from eq $name) {
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "$from: привык забавляться сам с собой?");
+            return;
+         }
+
          if (defined $bomb_time{lc($name)}) {
             $bot->SendGroupMessage($msg{'reply_to'},
                "$from: на $name уже установлена бомба.");
             return;
          }
+
+         if (abs(time - $last_bomb_time) < 180) {
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "$from: у меня ещё не восполнен боезапас. Жди.");
+            return;
+         }
+
+         $last_bomb_time = time;
 
          my %selected_colors;
          while($col_count != keys %selected_colors){
@@ -175,15 +208,10 @@ sub new_bot_message {
          $bomb_resourse{lc($name)} = $resourse;
          $bomb_nick{lc($name)} = $name;
 
-         my $txt;
-         if ($from eq $name) {
-            $txt = "$from, привык забавляться сам с собой?";
-         } else {
-            $txt = "Привет от $from, $name!";
-         }
-         $txt .= " Я хочу сыграть с тобой в игру.\n" .
+         my $txt = "Привет от $from, $name! Я хочу сыграть с тобой в игру.\n" .
          "Правила очень простые. Всю свою жизнь ты не уважал random, " .
-         "и теперь пришло время поплатиться. \nНа тебе бомба, из которой торчат " .
+         "и теперь пришло время поплатиться. \n" .
+         "На тебе бомба, из которой торчат " .
          "$selected_colors_t провода. \n" .
          "Твоя задача -- правильно выбрать провод. " .
          "До взрыва осталось 1-2 минуты. Время пошло!";
@@ -253,6 +281,9 @@ sub new_bot_message {
                } elsif ($type{'html'}) {
                   my $content = $response->decoded_content;
 
+                  return if scalar $response->code < 200 || 
+                  scalar $response->code >= 400;
+
                   $content =~ m{.*<title[^>]*>(.*?)</title.*}si;
 
                   my $title = defined $1 ? $1 : "";
@@ -273,7 +304,7 @@ sub new_bot_message {
          my $response = $ua->get($uri);
       }
 
-      when (\@colors) {
+      when (sub{return $col_hash{lc($_)} || 0}) {
          return unless defined $bomb_correct{lc($from)};
 
          if ($bomb_correct{lc($from)} eq $msg{'body'}) {
