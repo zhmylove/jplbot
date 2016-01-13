@@ -1,5 +1,5 @@
 --- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
-+++ Bot.pm	2016-01-13 15:39:49.231884763 +0300
++++ Bot.pm	2016-01-13 22:36:11.792165653 +0300
 @@ -49,17 +49,18 @@
  has 'loop_sleep_time'     => (isa => PosNum, is => 'rw', default => 5);
  has 'process_timeout'     => (isa => PosNum, is => 'rw', default => 5);
@@ -22,16 +22,18 @@
  has 'forum_join_time'        => (isa => HashRef[Int], is => 'rw', default => sub{{}}); # List of when we joined each forum
  has 'out_messages_per_second' => (isa => PosNum, is => 'rw', default => sub{5});
  has 'message_delay'           => (isa => PosNum, is => 'rw', default => sub {1/5});
-@@ -67,6 +68,8 @@
+@@ -67,6 +68,10 @@
  has 'max_message_size'        => (isa => HundredInt, is => 'rw', default => 1000000);
  has 'max_messages_per_hour'   => (isa => PosInt,     is => 'rw', default => 1000000);
  
 +has 'JidDB'                   => (isa => HashRef[HashRef[Str]], is => 'rw', required => 1);
++has 'SayToDB'                 => (isa => HashRef[HashRef[HashRef[HashRef[Str]]]], is => 'rw', required => 1);
++has 'SayTo'                   => (isa => Maybe[CodeRef], is => 'rw', default => sub{undef});
 +
  # Initialize this hour's message count.
  has 'messages_sent_today'     => (isa => 'HashRef', is => 'ro', default => sub{{(localtime)[7] => {(localtime)[2] => 0}}});
  
-@@ -294,6 +297,10 @@
+@@ -294,6 +299,18 @@
  
  safetey: 166
  
@@ -39,10 +41,18 @@
 +
 +Database of JIDs per forum
 +
++=item B<SayToDB>
++
++Database of sayto messages per forum
++
++=item B<SayTo>
++
++Function which reacts on presence
++
  =back
  
  =cut
-@@ -422,7 +429,7 @@
+@@ -422,7 +439,7 @@
      $self->Process(5);
  
      foreach my $forum (keys %{$self->forums_and_responses}) {
@@ -51,7 +61,7 @@
      }
  
      INFO("Connected to server '" . $self->server . "' successfully");
-@@ -443,12 +450,14 @@
+@@ -443,12 +460,14 @@
  sub JoinForum {
      my $self = shift;
      my $forum_name = shift;
@@ -66,7 +76,7 @@
                                    );
  
      $self->forum_join_time->{$forum_name} = time;
-@@ -649,21 +658,7 @@
+@@ -649,21 +668,7 @@
  
      # Determine if this message was addressed to me. (groupchat only)
      my $bot_address_from;
@@ -89,7 +99,7 @@
  
      # Call the message callback if it's defined.
      if( defined $self->message_function) {
-@@ -789,6 +784,20 @@
+@@ -789,6 +794,25 @@
      my $status = $presence->GetStatus();
      $status = "." if(!defined $status);
  
@@ -97,20 +107,25 @@
 +    $forum = (split '@', $forum)[0];
 +
 +    if($type eq 'unavailable') { # Delete disconnected user
-+       if (defined ${ $self->JidDB->{$forum} }{$nick}) {
-+          delete ${ $self->JidDB->{$forum} }{$nick};
++       if(defined $self->JidDB->{$forum}->{$nick}) {
++          delete $self->JidDB->{$forum}->{$nick};
 +       }
 +
 +       return;
 +    }
 +
 +    # "register" user on any other types
-+    ${ $self->JidDB->{$forum} }{$nick} = 1;
++    $self->JidDB->{$forum}->{$nick} = 1;
++
++    # call SayTo subroutine if needed
++    if(defined $self->SayToDB->{$forum}->{$nick}) {
++       &{ $self->SayTo }($self, $forum, $nick);
++    }
 +
      DEBUG("Presence From $from t=$type s=$status");
      DEBUG("Presence XML: " . $presence->GetXML());
  }
-@@ -896,7 +905,8 @@
+@@ -896,7 +920,8 @@
  Assures message size does not exceed a limit and chops it into pieces if need be.
  
  NOTE: non-printable characters (unicode included) will be stripped before sending to the server via:
@@ -120,7 +135,7 @@
  
  =cut
  
-@@ -989,7 +999,8 @@
+@@ -989,7 +1014,8 @@
  
      # Strip out anything that's not a printable character
      # Now with unicode support?
@@ -130,7 +145,7 @@
  
      my $message_length = length($message_chunk);
      DEBUG("Sending message $yday-$hour-$messages_this_hour $message_length bytes to $recipient");
-@@ -1134,6 +1145,22 @@
+@@ -1134,6 +1160,22 @@
      $self->jabber_client->Subscription(type=>"unsubscribe", to=>$user);
      $self->jabber_client->Subscription(type=>"unsubscribed",to=>$user);
  }
@@ -148,7 +163,7 @@
 +
 +    return 0 if(!defined $forum || !defined $nick);
 +
-+    return ${ $self->JidDB->{$forum} }{$nick} || 0;
++    return $self->JidDB->{$forum}->{$nick} || 0;
 +}
  =back
  
