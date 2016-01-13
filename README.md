@@ -12,6 +12,7 @@ The command list follows:
 * user: --
 * fortune        -- show random thesis from fortune(6).
 * http://uri     -- show information about first found URI.
+* sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 
 Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.ru/web/korg/home/-/blogs/пишем-простенького-jabber-бота-на-perl).  
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
@@ -26,3 +27,6 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * src/config.pl         -- configuration file included when needed.
 * patch/Bot.pm.patch  -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
 
+## What if ...
+If you liked this bot, you can send me a postcard to [s@zhmylove.ru](mailto:s@zhmylove.ru) and star this project on the github.  
+If you want to propose some features, code improvements or bug reports, just use "Issues". Yep, I'll read them.

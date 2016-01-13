@@ -4,6 +4,8 @@
 $name = 'AimBot';
 # Path to file for karma saving routine
 $karmafile = '/tmp/karma';
+# Path to file for sayto saving routine
+$karmafile = '/tmp/sayto';
 # Address of XMPP server of the bot's account
 $server = 'zhmylove.ru';
 # Port of XMPP server of the bot's account
@@ -26,6 +28,10 @@ $conference_server = 'conference.jabber.ru';
    'бело-коричневый', 'коричневый',
 );
 # Minimum number of colors to select from @colors
-$minimum_colors = 3;
+$colors_minimum = 3;
+# Maximum number of sayto messages per forum
+$sayto_max = 128;
+# 1 week before cleanup
+$sayto_keep_time = 604800;
 #
 ### USER VARIABLES SECTION END   #############################################
