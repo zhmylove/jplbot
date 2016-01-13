@@ -46,12 +46,15 @@ my %bomb_nick;
 my $col_count = int($minimum_colors + ($#colors - $minimum_colors + 1) * rand);
 my %col_hash;
 $col_hash{lc($_)} = 1 for @colors;
+my %jid_DB = ();
 
 my $qname = quotemeta($name);
+my $bot_address = "https://github.com/tune-it/jplbot";
 $SIG{INT} = \&shutdown;
 $SIG{TERM} = \&shutdown;
 binmode STDOUT, ':utf8';
-my $bot_address = "https://github.com/tune-it/jplbot";
+my $rb = "[\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}]";
+my $rB = "[^$rb]";
 
 sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
@@ -67,6 +70,8 @@ sub bomb_user {
    delete $bomb_correct{lc($user)};
    delete $bomb_resourse{lc($user)};
    delete $bomb_nick{lc($user)};
+
+   return unless $bot->IsInRoom((split '@', $to)[0], $nick);
 
    $bot->SendGroupMessage($to, "$nick: ты взорвался!");
 
@@ -89,29 +94,26 @@ sub new_bot_message {
    my %msg = @_;
    my $bot = $msg{'bot_object'};
 
-   my $from = $msg{'from_full'};
-   $from =~ s{^.+/([^/]+)$}{$1};
-
-   my $resourse = $msg{'from_full'};
-   $resourse =~ s{^(.+)/[^/]+$}{$1};
+   my ($resource, $from) = split '/', $msg{'from_full'};
+   my $forum = (split '@', $resource)[0];
 
    my $to_me = ($msg{'body'} =~ s{^$qname: }{});
 
    if ($msg{'type'} eq "chat") {
       $bot->SendPersonalMessage($msg{'reply_to'},
-         "Я не работаю в привате. Если Вы нашли проблему, у Вас есть предложения или " .
-         "пожелания, пишите issue на $bot_address");
+         "Я не работаю в привате. Если Вы нашли проблему, " .
+         "у Вас есть предложения или пожелания, пишите issue на $bot_address");
       return;
    }
 
    given ($msg{'body'}) {
 
-      when (/^date\s*$/i) {
+      when (/^(?:date|дата)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: " . localtime);
       }
 
-      when (/^time\s*$/i) {
+      when (/^(?:time|время)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: " . time);
       }
@@ -145,10 +147,23 @@ sub new_bot_message {
 
       when (/^help\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: пробуй так: bomb date fortune karma time");
+            "$from: я написал тебе в личку");
+
+         $bot->SendPersonalMessage($msg{'reply_to'} . "/$from",
+            "Краткая справка: \n" .
+            " bomb        nick    -- установить бомбу\n" .
+            " date                -- вывести дату\n" .
+            " fortune             -- вывеси цитату\n" .
+            " karma       nick    -- вывести карму\n" .
+            " sayto      /nick/   -- сказать пользователю\n" .
+            " time                -- вывести время\n" .
+            "\n" .
+            "Вопросы и предложения: $bot_address\n" .
+            "Чмоки ;-)"
+            );
       }
 
-      when (/^fortune\s*$/i) {
+      when (/^(?:fortune|ф)\s*$/i) {
          my $fortune = `/usr/games/fortune -s`;
          chomp $fortune;
          $bot->SendGroupMessage($msg{'reply_to'},
@@ -156,81 +171,14 @@ sub new_bot_message {
          sleep 1;
       }
 
-      when (/^karma\s*$/i) {
+      when (/^(?:karma|карма)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: твоя карма: " . ($karma{lc($from)}||0));
       }
 
-      when (/^karma\s*(\S+)$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: карма $1: " . ($karma{lc($1)}||0));
-      }
-
-      when (/^bomb\s*$/i) {
+      when (/^(?:bomb|бомба)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: бомба -- это не игрушки!");
-      }
-
-      when (/^bomb\s*(\S+)$/i) {
-         my $name = $1;
-
-         if ($from eq $name) {
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: привык забавляться сам с собой?");
-            return;
-         }
-
-         if (defined $bomb_time{lc($name)}) {
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: на $name уже установлена бомба.");
-            return;
-         }
-
-         if (abs(time - $last_bomb_time) < 180) {
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "$from: у меня ещё не восполнен боезапас. Жди.");
-            return;
-         }
-
-         $last_bomb_time = time;
-
-         my %selected_colors;
-         while($col_count != keys %selected_colors){
-            $selected_colors{$colors[int($#colors * rand)]} = 1;
-         }
-
-         my $selected_colors_t = join ', ', (sort keys %selected_colors);
-
-         $selected_colors_t =~ s/,( \S+)$/ и$1/i;
-
-         $bomb_time{lc($name)} = time;
-         $bomb_correct{lc($name)} = (keys %selected_colors)[0];
-         $bomb_resourse{lc($name)} = $resourse;
-         $bomb_nick{lc($name)} = $name;
-
-         my $txt = "Привет от $from, $name! Я хочу сыграть с тобой в игру.\n" .
-         "Правила очень простые. Всю свою жизнь ты не уважал random, " .
-         "и теперь пришло время поплатиться. \n" .
-         "На тебе бомба, из которой торчат " .
-         "$selected_colors_t провода. \n" .
-         "Твоя задача -- правильно выбрать провод. " .
-         "До взрыва осталось 1-2 минуты. Время пошло!";
-
-         $bot->SendGroupMessage($msg{'reply_to'}, $txt);
-      }
-
-      when (/^(\w+):\s*\+[+1]+\s*$/) {
-         return if $1 eq $from;
-         $karma{lc($1)}++;
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: поднял карму $1 до " . $karma{lc($1)});
-      }
-
-      when (/^(\w+):\s*\-[-1]+\s*$/) {
-         return if $1 eq $from;
-         $karma{lc($1)}--;
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: опустил карму $1 до " . $karma{lc($1)});
       }
 
       when (m{(https?://\S+)}) {
@@ -282,7 +230,7 @@ sub new_bot_message {
                   my $content = $response->decoded_content;
 
                   return if scalar $response->code < 200 || 
-                  scalar $response->code >= 400;
+                  scalar $response->code >= 300;
 
                   $content =~ m{.*<title[^>]*>(.*?)</title.*}si;
 
@@ -320,6 +268,88 @@ sub new_bot_message {
       }
 
       default {
+         # manual check for nick presence, performance hack
+         foreach my $nick (keys $jid_DB{$forum}) {
+            my $qnick = quotemeta($nick);
+
+            if (" $msg{body} " =~ m{$rb$qnick$rb}i) {
+
+               given ($msg{'body'}) {
+
+                  when (/^(?:karma|карма)$rb*?$qnick$/i) {
+                     $bot->SendGroupMessage($msg{'reply_to'},
+                        "$from: карма $nick " . ($karma{lc($nick)}||0));
+                  }
+
+                  when (/^(?:bomb|бомба)$rb*?$qnick$/i) {
+                     if ($from eq $nick) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$from: привык забавляться сам с собой?");
+                        return;
+                     }
+
+                     if (defined $bomb_time{lc($nick)}) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$from: на $nick уже установлена бомба.");
+                        return;
+                     }
+
+                     if (abs(time - $last_bomb_time) < 180) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$from: у меня ещё не восполнен боезапас. Жди.");
+                        return;
+                     }
+
+                     $last_bomb_time = time;
+
+                     my %selected_colors;
+                     while($col_count != keys %selected_colors){
+                        $selected_colors{$colors[int($#colors * rand)]} = 1;
+                     }
+
+                     my $selected_colors_t = join ', ', (
+                        sort keys %selected_colors
+                     );
+
+                     $selected_colors_t =~ s/,( \S+)$/ и$1/i;
+
+                     $bomb_time{lc($nick)} = time;
+                     $bomb_correct{lc($nick)} = (keys %selected_colors)[0];
+                     $bomb_resourse{lc($nick)} = $resource;
+                     $bomb_nick{lc($nick)} = $nick;
+
+                     my $txt = "Привет от $from, $nick! " .
+                     "Я хочу сыграть с тобой в игру.\n" .
+                     "Правила очень простые. " .
+                     "Всю свою жизнь ты не уважал random, " .
+                     "и теперь пришло время поплатиться. \n" .
+                     "На тебе бомба, из которой торчат " .
+                     "$selected_colors_t провода. \n" .
+                     "Твоя задача -- правильно выбрать провод. " .
+                     "До взрыва осталось 1-2 минуты. Время пошло!";
+
+                     $bot->SendGroupMessage($msg{'reply_to'}, $txt);
+                  }
+
+                  when (/^($qnick):\s*\+[+1]+\s*$/) {
+                     return if $nick eq $from;
+                     $karma{lc($nick)}++;
+                     $bot->SendGroupMessage($msg{'reply_to'},
+                        "$from: поднял карму $nick до " . $karma{lc($nick)});
+                  }
+
+                  when (/^($qnick):\s*\-[-1]+\s*$/) {
+                     return if $nick eq $from;
+                     $karma{lc($nick)}--;
+                     $bot->SendGroupMessage($msg{'reply_to'},
+                        "$from: опустил карму $nick до " . $karma{lc($nick)});
+                  }
+               }
+
+               return;
+            }
+         }
+
          $bot->SendGroupMessage($msg{'reply_to'},
             "$from: how about NO, братиша?") if $to_me;
       }
@@ -343,6 +373,7 @@ my $bot = Net::Jabber::Bot->new(
    loop_sleep_time => $loop_sleep_time,
    forums_and_responses => \%forum_list,
    forums_passwords => \%forum_passwords,
+   JidDB => \%jid_DB,
 );
 
 $bot->Start();
