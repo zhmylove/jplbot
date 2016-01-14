@@ -1,36 +1,37 @@
 #!/usr/local/bin/perl
 # made by: KorG
 use strict;
-use warnings;
 use v5.18;
-no warnings 'experimental';
 use utf8;
+use warnings;
+no warnings 'experimental';
 
 use Net::Jabber::Bot;
 use Storable;
 use LWP;
+use Google::Search;
 
-# DEFAULT VALUES, don't change them here
-# See comments in the 'config.pl'
+# DEFAULT VALUES. don't change them here
+# see comments in the 'config.pl'
 our $name = 'AimBot';
 our $karmafile = '/tmp/karma';
 our $saytofile = '/tmp/sayto';
 our $sayto_keep_time = 604800;
+our $sayto_max = 128;
 our $server = 'zhmylove.ru';
 our $port = 5222;
 our $username = 'aimbot';
 our $password = 'password';
 our $loop_sleep_time = 60;
 our $conference_server = 'conference.jabber.ru';
-our %forum_passwords = ('ubuntulinux' => 'ubuntu');
+our %room_passwords = ('ubuntulinux' => 'ubuntu');
+our $colors_minimum = 3;
 our @colors = (
    'бело-оранжевый', 'оранжевый',
    'бело-зелёный', 'зелёный',
    'бело-синий', 'синий',
    'бело-коричневый', 'коричневый',
 );
-our $colors_minimum = 3;
-our $sayto_max = 128;
 
 unless (my $ret = do './config.pl') {
    warn "couldn't parse config.pl: $@" if $@;
@@ -38,45 +39,52 @@ unless (my $ret = do './config.pl') {
    warn "couldn't run config.pl" unless $ret;
 }
 
-srand;
 store {}, $karmafile unless -r $karmafile;
-my %karma = %{retrieve($karmafile)};
 store {}, $saytofile unless -r $saytofile;
+my %karma = %{retrieve($karmafile)};
 my %sayto = %{retrieve($saytofile)};
+say "Karma records: " . keys %karma if scalar keys %karma;
+say "Sayto records: " . keys %sayto if scalar keys %sayto;
+
 my %jid_DB = ();
 my %bomb_time;
 my %bomb_correct;
 my %bomb_resourse;
 my %bomb_nick;
 my $last_bomb_time = 0;
+my %last_google = ('request','');
 my $col_count = int($colors_minimum + ($#colors - $colors_minimum + 1) * rand);
 my %col_hash;
-my %forum_list;
+my %room_list;
 $col_hash{lc($_)} = 1 for @colors;
-$forum_list{$_} = [] for keys %forum_passwords; # [] due to Bot.pm.patch
+$room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
 my $qname = quotemeta($name);
 my $bot_address = "https://github.com/tune-it/jplbot";
 my $rb = "[\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}]";
 my $rB = "[^$rb]";
-$SIG{INT} = \&shutdown;
-$SIG{TERM} = \&shutdown;
+
+$SIG{'INT'} = \&shutdown;
+$SIG{'TERM'} = \&shutdown;
 binmode STDOUT, ':utf8';
+srand;
 
 sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
+
    exit 0;
 }
 
 sub say_to {
-   my ($bot, $room, $dst) = @_;
+   my ($bot, $room, $nick) = @_;
+   my $dst = lc $nick;
 
    return unless (defined $sayto{$room} && defined $sayto{$room}->{$dst});
 
    foreach my $src (keys $sayto{$room}->{$dst}) {
-      $bot->SendPersonalMessage("$room\@$conference_server/$dst",
-         "Тебе писал $src: [" . $sayto{$room}->{$dst}->{$src}->{'text'});
+      $bot->SendPersonalMessage("$room\@$conference_server/$nick",
+         "Тебе писал $src: [" . $sayto{$room}->{$dst}->{$src}->{'text'} . "]");
 
       delete $sayto{$room}->{$dst}->{$src};
 
@@ -86,7 +94,7 @@ sub say_to {
 
 sub bomb_user {
    my ($bot, $user) = @_;
-   my $to = $bomb_resourse{lc($user)};
+   my $dst = $bomb_resourse{lc($user)};
    my $nick = $bomb_nick{lc($user)};
 
    delete $bomb_time{lc($user)};
@@ -94,11 +102,11 @@ sub bomb_user {
    delete $bomb_resourse{lc($user)};
    delete $bomb_nick{lc($user)};
 
-   return unless $bot->IsInRoom((split '@', $to)[0], $nick);
+   return unless $bot->IsInRoom((split '@', $dst)[0], $nick);
 
-   $bot->SendGroupMessage($to, "$nick: ты взорвался!");
+   $bot->SendGroupMessage($dst, "$nick: ты взорвался!");
 
-   my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$to' " .
+   my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$dst' " .
    "type='set'><query xmlns='http://jabber.org/protocol/muc#admin'><item " .
    "nick='$nick' role='none'><reason>Bombed!</reason></item></query></iq>";
 
@@ -114,7 +122,7 @@ sub background_checks {
          $bomb_time{lc($_)} + $loop_sleep_time);
    }
 
-   foreach my $room (keys %forum_passwords) {
+   foreach my $room (keys %room_passwords) {
       foreach my $dst (keys $sayto{$room}) {
          foreach my $src (keys $sayto{$room}->{$dst}) {
             delete $sayto{$room}->{$dst}->{$src} if ( time >
@@ -131,8 +139,8 @@ sub new_bot_message {
    my %msg = @_;
    my $bot = $msg{'bot_object'};
 
-   my ($resource, $from) = split '/', $msg{'from_full'};
-   my $forum = (split '@', $resource)[0];
+   my ($resource, $src) = split '/', $msg{'from_full'};
+   my $room = (split '@', $resource)[0];
 
    my $to_me = ($msg{'body'} =~ s{^$qname: }{});
 
@@ -147,12 +155,12 @@ sub new_bot_message {
 
       when (/^(?:date|дата)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: " . localtime);
+            "$src: " . localtime);
       }
 
       when (/^(?:time|время)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: " . time);
+            "$src: " . time);
       }
 
       when (/emacs/i) {
@@ -172,9 +180,9 @@ sub new_bot_message {
 
       when (/^help\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: я написал тебе в личку");
+            "$src: я написал тебе в личку");
 
-         $bot->SendPersonalMessage($msg{'reply_to'} . "/$from",
+         $bot->SendPersonalMessage($msg{'reply_to'} . "/$src",
             "Краткая справка: \n" .
             " bomb        nick      -- установить бомбу\n" .
             " date                  -- вывести дату\n" .
@@ -185,7 +193,7 @@ sub new_bot_message {
             "\n" .
             "Вопросы и предложения: $bot_address\n" .
             "В благодарность вы можете нажать Star на странице проекта. " .
-            "Это совершенно бесплатно\n" .
+            "Это совершенно бесплатно.\n" .
             "Чмоки ;-)"
          );
       }
@@ -194,18 +202,18 @@ sub new_bot_message {
          my $fortune = `/usr/games/fortune -s`;
          chomp $fortune;
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: $fortune");
+            "$src: $fortune");
          sleep 1;
       }
 
       when (/^(?:karma|карма)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: твоя карма: " . ($karma{lc($from)}||0));
+            "$src: твоя карма: " . ($karma{lc($src)}||0));
       }
 
       when (/^(?:bomb|бомба)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: бомба -- это не игрушки!");
+            "$src: бомба -- это не игрушки!");
       }
 
       when (m{(https?://\S+)}) {
@@ -222,7 +230,7 @@ sub new_bot_message {
 
                if (scalar $response->code >= 400) {
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$from: сервер вернул код: " .
+                     "$src: сервер вернул код: " .
                      $response->code . ", разбирайся сам!");
 
                   die;
@@ -242,7 +250,7 @@ sub new_bot_message {
                   while($length=~s/(?<=\d)(?=\d{3}\b)/ /){}
 
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$from: Content-Length: $length байт.");
+                     "$src: Content-Length: $length байт.");
 
                   die;
                }
@@ -269,69 +277,96 @@ sub new_bot_message {
                   }
 
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$from: заголовок: [$title]");
+                     "$src: заголовок: [$title]");
                } else {
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$from: да ну нафиг это парсить...");
+                     "$src: да ну нафиг это парсить...");
                }
             });
 
          my $response = $ua->get($uri);
       }
 
-      when (/^test$/) {
-         return unless defined $sayto{$forum};
+      when (m{(^\S+?: |\s|^)(?:man|ман|[mм]):/?/?(\S+)}i) {
+         return unless defined $2;
 
-         foreach my $src (keys $sayto{$forum}) {
-            say $src;
-            foreach my $dst (keys $sayto{$forum}->{$src}) {
-               say " $dst";
-               say "  " . $sayto{$forum}->{$src}->{$dst}->{'text'};
-               say "  " . $sayto{$forum}->{$src}->{$dst}->{'time'};
-            }
-         }
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$1https://www.freebsd.org/cgi/man.cgi?query=$2");
       }
 
-      when (m{^sayto[^/]*/([^/]*)/(.*)$}s) {
-         my $sayto_to = $1;
-         my $sayto_txt = $2;
+      when (m{(?:^|\s)(\d?)(?:google|[гg]):/?/?(\S+)}i) {
+         return unless defined $2;
 
-         if ($bot->IsInRoom($forum, $sayto_to)) {
+         my $count = 0;
+         $count = $1 if (defined $1 && $1 ne "");
+
+         my $request = $2;
+
+         my $search = Google::Search->Web($request);
+         my $result;
+
+         if ($count < 1 || $count > 9) {
+            if ($last_google{'request'} ne $request) {
+               $last_google{'request'} = $request;
+               $last_google{'count'} = 1;
+            } else {
+               $last_google{'count'}++;
+            }
+
+            $count = $last_google{'count'};
+         }
+
+         for (1 .. $count) {
+            $result = $search->next->uri;
+         }
+
+         $result =~ s/%([A-F\d]{2})/chr hex $1/ieg;
+         utf8::decode($result);
+
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$src: $result");
+      }
+
+      when (m{^sayto[^/]*/([^/]*?)$rb?/(.*)$}s) {
+         my $dst = $1;
+         my $txt = $2;
+
+         if (my @nick = $bot->IsInRoom($room, $dst)) {
             $bot->SendGroupMessage($msg{'reply_to'},
-               "$sayto_to: смотри, тебе пишет $from!");
+               "@nick: смотри, тебе пишет $src!");
 
             return;
          }
 
-         if (defined $sayto{$forum}) {
-            if (scalar keys $sayto{$forum} > $sayto_max) {
+         if (defined $sayto{$room}) {
+            if (scalar keys $sayto{$room} > $sayto_max) {
                $bot->SendGroupMessage($msg{'reply_to'},
-                  "$from: у меня кончилось место :(");
+                  "$src: у меня кончилось место :(");
 
                return;
             }
 
-            if (defined $sayto{$forum}->{$sayto_to}->{$from} &&
-               defined $sayto{$forum}->{$sayto_to}->{$from}->{'text'}) {
+            if (defined $sayto{$room}->{lc($dst)}->{$src} &&
+               defined $sayto{$room}->{lc($dst)}->{$src}->{'text'}) {
                $bot->SendGroupMessage($msg{'reply_to'},
-                  "$from: предыдущее значение: [" .
-                  $sayto{$forum}->{$sayto_to}->{$from}->{'text'} .
+                  "$src: предыдущее значение: [" .
+                  $sayto{$room}->{lc($dst)}->{$src}->{'text'} .
                   "]");
             }
          }
 
-         $sayto{$forum}->{$sayto_to}->{$from} = {
-            'text' => $sayto_txt,
-            'time' => time,
+         $sayto{$room}->{lc($dst)}->{$src} = {
+            text => $txt,
+            time => time,
          };
 
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: замётано.");
+            "$src: замётано.");
       }
 
       when (/^(?:(?:добро|все|ребя)\w*)*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: и тебе доброе утро!");
+            "$src: и тебе доброе утро!");
       }
 
       when (/^ку[\s!]*\b/i || /^(?:всем\s*)?прив\w*[.\s!]*$/i ||
@@ -342,7 +377,7 @@ sub new_bot_message {
 
       when (/^пыщь?(?:-пыщь?)?[.\s!]*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: пыщь-пыщь, дави прыщь!");
+            "$src: пыщь-пыщь, дави прыщь!");
       }
 
       when (/^(?:доброй|спокойной|всем)?\s*ночи[.\s!]*$/i ||
@@ -352,23 +387,24 @@ sub new_bot_message {
       }
 
       when (sub{return $col_hash{lc($_)} || 0}) {
-         return unless defined $bomb_correct{lc($from)};
+         return unless defined $bomb_correct{lc($src)};
 
-         if ($bomb_correct{lc($from)} eq $msg{'body'}) {
-            delete $bomb_time{lc($from)};
-            delete $bomb_correct{lc($from)};
-            delete $bomb_resourse{lc($from)};
-            delete $bomb_nick{lc($from)};
+         if ($bomb_correct{lc($src)} eq $msg{'body'}) {
+            delete $bomb_time{lc($src)};
+            delete $bomb_correct{lc($src)};
+            delete $bomb_resourse{lc($src)};
+            delete $bomb_nick{lc($src)};
+
             $bot->SendGroupMessage($msg{'reply_to'},
-               "$from, расслабься, это был всего-лишь розыгрыш!");
+               "$src, расслабься, это был всего-лишь розыгрыш!");
          } else {
-            bomb_user($bot, $from);
+            bomb_user($bot, $src);
          }
       }
 
       default {
          # manual check for nick presence, performance hack
-         foreach my $nick (keys $jid_DB{$forum}) {
+         foreach my $nick (keys $jid_DB{$room}) {
             my $qnick = quotemeta($nick);
 
             if (" $msg{body} " =~ m{$rb$qnick$rb}i) {
@@ -377,25 +413,28 @@ sub new_bot_message {
 
                   when (/^(?:karma|карма)$rb*?$qnick\s*?$/i) {
                      $bot->SendGroupMessage($msg{'reply_to'},
-                        "$from: карма $nick " . ($karma{lc($nick)}||0));
+                        "$src: карма $nick " . ($karma{lc($nick)}||0));
                   }
 
                   when (/^(?:bomb|бомба)$rb*?$qnick\s*?$/i) {
-                     if ($from eq $nick) {
+                     if ($src eq $nick) {
                         $bot->SendGroupMessage($msg{'reply_to'},
-                           "$from: привык забавляться сам с собой?");
+                           "$src: привык забавляться сам с собой?");
+
                         return;
                      }
 
                      if (defined $bomb_time{lc($nick)}) {
                         $bot->SendGroupMessage($msg{'reply_to'},
-                           "$from: на $nick уже установлена бомба.");
+                           "$src: на $nick уже установлена бомба.");
+
                         return;
                      }
 
                      if (abs(time - $last_bomb_time) < 180) {
                         $bot->SendGroupMessage($msg{'reply_to'},
-                           "$from: у меня ещё не восполнен боезапас. Жди.");
+                           "$src: у меня ещё не восполнен боезапас. Жди.");
+
                         return;
                      }
 
@@ -417,7 +456,7 @@ sub new_bot_message {
                      $bomb_resourse{lc($nick)} = $resource;
                      $bomb_nick{lc($nick)} = $nick;
 
-                     my $txt = "Привет от $from, $nick! " .
+                     my $txt = "Привет от $src, $nick! " .
                      "Я хочу сыграть с тобой в игру.\n" .
                      "Правила очень простые. " .
                      "Всю свою жизнь ты не уважал random, " .
@@ -430,18 +469,20 @@ sub new_bot_message {
                      $bot->SendGroupMessage($msg{'reply_to'}, $txt);
                   }
 
-                  when (/^($qnick):\s*\+[+1]+\s*$/) {
-                     return if $nick eq $from;
+                  when (/^($qnick):?\s*\+[+1]+\s*$/) {
+                     return if $nick eq $src;
+
                      $karma{lc($nick)}++;
                      $bot->SendGroupMessage($msg{'reply_to'},
-                        "$from: поднял карму $nick до " . $karma{lc($nick)});
+                        "$src: поднял карму $nick до " . $karma{lc($nick)});
                   }
 
-                  when (/^($qnick):\s*\-[-1]+\s*$/) {
-                     return if $nick eq $from;
+                  when (/^($qnick):?\s*\-[-1]+\s*$/) {
+                     return if $nick eq $src;
+
                      $karma{lc($nick)}--;
                      $bot->SendGroupMessage($msg{'reply_to'},
-                        "$from: опустил карму $nick до " . $karma{lc($nick)});
+                        "$src: опустил карму $nick до " . $karma{lc($nick)});
                   }
                }
 
@@ -450,7 +491,7 @@ sub new_bot_message {
          }
 
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$from: how about NO, братиша?") if $to_me;
+            "$src: how about NO, братиша?") if $to_me;
       }
    }
 }
@@ -467,8 +508,8 @@ my $bot = Net::Jabber::Bot->new(
    message_function => \&new_bot_message,
    background_function => \&background_checks,
    loop_sleep_time => $loop_sleep_time,
-   forums_and_responses => \%forum_list,
-   forums_passwords => \%forum_passwords,
+   forums_and_responses => \%room_list,
+   forums_passwords => \%room_passwords,
    JidDB => \%jid_DB,
    SayTo => \&say_to,
    SayToDB => \%sayto,
