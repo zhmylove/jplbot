@@ -5,7 +5,7 @@ $name = 'AimBot';
 # Path to file for karma saving routine
 $karmafile = '/tmp/karma';
 # Path to file for sayto saving routine
-$karmafile = '/tmp/sayto';
+$saytofile = '/tmp/sayto';
 # Address of XMPP server of the bot's account
 $server = 'zhmylove.ru';
 # Port of XMPP server of the bot's account
@@ -19,7 +19,7 @@ $loop_sleep_time = 60;
 # Address of a conference server, where forums are expected to be
 $conference_server = 'conference.jabber.ru';
 # MUC forums (chatrooms) with their passwords
-%forum_passwords = ('ubuntulinux' => 'ubuntu');
+%room_passwords = ('ubuntulinux' => 'ubuntu');
 # All colors, selected for the bombs
 @colors = (
    'бело-оранжевый', 'оранжевый',
