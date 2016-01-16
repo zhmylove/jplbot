@@ -61,8 +61,9 @@ $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
 my $qname = quotemeta($name);
 my $bot_address = "https://github.com/tune-it/jplbot";
-my $rb = "[\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}]";
-my $rB = "[^$rb]";
+my $rsymbols = "\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}";
+my $rb = "[$rsymbols]";
+my $rB = "[^$rsymbols]";
 
 $SIG{'INT'} = \&shutdown;
 $SIG{'TERM'} = \&shutdown;
@@ -178,6 +179,11 @@ sub new_bot_message {
             "убунта нинужна >_<") if int(2*rand);
       }
 
+      when (/(?:perl|перл)/i) {
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "папа ^_^") if int(2*rand);
+      }
+
       when (/^help\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$src: я написал тебе в личку");
@@ -247,7 +253,7 @@ sub new_bot_message {
                   my $length = $response->header('Content-Length');
                   $length = -1 unless $length > 0;
 
-                  while($length=~s/(?<=\d)(?=\d{3}\b)/ /){}
+                  while ($length =~ s/(?<=\d)(?=\d{3}\b)/ /){}
 
                   $bot->SendGroupMessage($msg{'reply_to'},
                      "$src: Content-Length: $length байт.");
@@ -262,14 +268,14 @@ sub new_bot_message {
                if ($type{'image'}) {
                   # do nothing for all other chunks of response
                } elsif ($type{'html'}) {
-                  my $content = $response->decoded_content;
+                  my $content = $response->decoded_content // '';
 
                   return if scalar $response->code < 200 || 
                   scalar $response->code >= 300;
 
                   $content =~ m{.*<title[^>]*>(.*?)</title.*}si;
 
-                  my $title = defined $1 ? $1 : "";
+                  my $title = $1 // '';
 
                   if ($title eq "") {
                      $title = $uri;
