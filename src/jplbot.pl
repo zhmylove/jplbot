@@ -61,6 +61,7 @@ $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
 my $qname = quotemeta($name);
 my $bot_address = "https://github.com/tune-it/jplbot";
+my $start_time = time;
 my $rsymbols = "\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}";
 my $rb = "[$rsymbols]";
 my $rB = "[^$rsymbols]";
@@ -73,6 +74,7 @@ srand;
 sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
+   say "Uptime: " . (time - $start_time);
 
    exit 0;
 }
@@ -222,6 +224,43 @@ sub new_bot_message {
             "$src: бомба -- это не игрушки!");
       }
 
+      when (m{^sayto[^/]*/([^/]*?)$rb?/(.*)$}s) {
+         my $dst = $1;
+         my $txt = $2;
+
+         if (my @nick = $bot->IsInRoom($room, $dst)) {
+            $bot->SendGroupMessage($msg{'reply_to'},
+               "@nick: смотри, тебе пишет $src!");
+
+            return;
+         }
+
+         if (defined $sayto{$room}) {
+            if (scalar keys $sayto{$room} > $sayto_max) {
+               $bot->SendGroupMessage($msg{'reply_to'},
+                  "$src: у меня кончилось место :(");
+
+               return;
+            }
+
+            if (defined $sayto{$room}->{lc($dst)}->{$src} &&
+               defined $sayto{$room}->{lc($dst)}->{$src}->{'text'}) {
+               $bot->SendGroupMessage($msg{'reply_to'},
+                  "$src: предыдущее значение: [" .
+                  $sayto{$room}->{lc($dst)}->{$src}->{'text'} .
+                  "]");
+            }
+         }
+
+         $sayto{$room}->{lc($dst)}->{$src} = {
+            text => $txt,
+            time => time,
+         };
+
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$src: замётано.");
+      }
+
       when (m{(https?://\S+)}) {
          my $uri = $1;
          my $ua = LWP::UserAgent->new();
@@ -333,43 +372,6 @@ sub new_bot_message {
             "$src: $result");
       }
 
-      when (m{^sayto[^/]*/([^/]*?)$rb?/(.*)$}s) {
-         my $dst = $1;
-         my $txt = $2;
-
-         if (my @nick = $bot->IsInRoom($room, $dst)) {
-            $bot->SendGroupMessage($msg{'reply_to'},
-               "@nick: смотри, тебе пишет $src!");
-
-            return;
-         }
-
-         if (defined $sayto{$room}) {
-            if (scalar keys $sayto{$room} > $sayto_max) {
-               $bot->SendGroupMessage($msg{'reply_to'},
-                  "$src: у меня кончилось место :(");
-
-               return;
-            }
-
-            if (defined $sayto{$room}->{lc($dst)}->{$src} &&
-               defined $sayto{$room}->{lc($dst)}->{$src}->{'text'}) {
-               $bot->SendGroupMessage($msg{'reply_to'},
-                  "$src: предыдущее значение: [" .
-                  $sayto{$room}->{lc($dst)}->{$src}->{'text'} .
-                  "]");
-            }
-         }
-
-         $sayto{$room}->{lc($dst)}->{$src} = {
-            text => $txt,
-            time => time,
-         };
-
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: замётано.");
-      }
-
       when (/^(?:(?:добро|все|ребя)\w*)*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$src: и тебе доброе утро!");
@@ -383,7 +385,7 @@ sub new_bot_message {
 
       when (/^пыщь?(?:-пыщь?)?[.\s!]*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: пыщь-пыщь, дави прыщь!");
+            "$src: пыщь-пыщь, ололо, я -- водитель НЛО!");
       }
 
       when (/^(?:доброй|спокойной|всем)?\s*ночи[.\s!]*$/i ||
