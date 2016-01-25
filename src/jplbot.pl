@@ -289,7 +289,7 @@ sub new_bot_message {
                }
 
                if ($type{'image'}) {
-                  my $length = $response->header('Content-Length');
+                  my $length = $response->header('Content-Length') // -1;;
                   $length = -1 unless $length > 0;
 
                   while ($length =~ s/(?<=\d)(?=\d{3}\b)/ /){}
