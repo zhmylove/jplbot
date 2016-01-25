@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# PROVIDE: jplbot
+# REQUIRE: LOGIN
+
+. /etc/rc.subr
+
+name=jplbot
+rcvar=jplbot_enable
+
+user="jplbot"
+command="/usr/local/jplbot/jplbot.pl"
+
+load_rc_config $name
+
+cd `dirname "$command"` &&
+   /usr/sbin/daemon -rfu "$user" "$command"
