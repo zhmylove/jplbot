@@ -63,7 +63,7 @@ case $1 in
       fi
       ;;
    *)
-      echo "";
+      echo "Usage: $0 (start|stop|restart|status)";
       exit 2;
       ;;
 esac
