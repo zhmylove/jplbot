@@ -25,6 +25,7 @@ our $password = 'password';
 our $loop_sleep_time = 60;
 our $conference_server = 'conference.jabber.ru';
 our %room_passwords = ('ubuntulinux' => 'ubuntu');
+our $last_like_max = 3;
 our $colors_minimum = 3;
 our @colors = (
    'бело-оранжевый', 'оранжевый',
@@ -53,15 +54,16 @@ my %bomb_resourse;
 my %bomb_nick;
 my $last_bomb_time = 0;
 my %last_google = ('request','');
+my %last_like;
 my $col_count = int($colors_minimum + ($#colors - $colors_minimum + 1) * rand);
 my %col_hash;
 my %room_list;
 $col_hash{lc($_)} = 1 for @colors;
 $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
-my $qname = quotemeta($name);
-my $bot_address = "https://github.com/tune-it/jplbot";
 my $start_time = time;
+my $qname = quotemeta($name);
+my $bot_address = "https://github.com/tune-it/jplbot"; # kinda copyleft
 my $rsymbols = "\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}";
 my $rb = "[$rsymbols]";
 my $rB = "[^$rsymbols]";
@@ -93,6 +95,29 @@ sub say_to {
 
       delete $sayto{$room}->{$dst} unless scalar keys $sayto{$room}->{$dst};
    }
+}
+
+sub allowed_like {
+   my ($src, $dst) = @_;
+   return 0 unless defined $dst;
+
+   if (exists $last_like{$src}) {
+      if (exists $last_like{$src}->{$dst}) {
+         return 0;
+      } else {
+         if ($last_like_max <= keys $last_like{$src}) {
+            return 0;
+         } else {
+            $last_like{$src}->{$dst} = 1;
+            return 1;
+         }
+      }
+   } else {
+      $last_like{$src}->{$dst} = 1;
+      return 1;
+   }
+
+   return 0; # just because
 }
 
 sub bomb_user {
@@ -136,6 +161,8 @@ sub background_checks {
          delete $sayto{$room}->{$dst} unless scalar keys $sayto{$room}->{$dst};
       }
    }
+
+   undef %last_like;
 }
 
 sub new_bot_message {
@@ -480,6 +507,13 @@ sub new_bot_message {
                   when (/^($qnick):?\s*\+[+1]+\s*$/) {
                      return if $nick eq $src;
 
+                     unless (allowed_like lc($src), lc($nick)) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$src: нельзя изменять карму так часто!");
+
+                        return;
+                     }
+
                      $karma{lc($nick)}++;
                      $bot->SendGroupMessage($msg{'reply_to'},
                         "$src: поднял карму $nick до " . $karma{lc($nick)});
@@ -487,6 +521,13 @@ sub new_bot_message {
 
                   when (/^($qnick):?\s*\-[-1]+\s*$/) {
                      return if $nick eq $src;
+
+                     unless (allowed_like lc($src), lc($nick)) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$src: нельзя изменять карму так часто!");
+
+                        return;
+                     }
 
                      $karma{lc($nick)}--;
                      $bot->SendGroupMessage($msg{'reply_to'},
