@@ -10,8 +10,60 @@ rcvar=jplbot_enable
 
 user="jplbot"
 command="/usr/local/jplbot/jplbot.pl"
+pidfile="/var/run/jplbot.pid"
+ppidfile="/var/run/jplbot.ppid"
+logfile="/var/log/jplbot.log"
 
 load_rc_config $name
 
-cd `dirname "$command"` &&
-   /usr/sbin/daemon -rfu "$user" "$command"
+if ! cd `dirname "$command"` ;then
+   echo "$name: can't chdir to dirname $command" >&2
+   exit 1
+fi
+
+
+start() {
+   echo "`date +%x.%H%M%S` starting $name" >>"$logfile"
+
+   /usr/sbin/daemon -P "$ppidfile" -p "$pidfile" -ru "$user" \
+      "$command" </dev/null >>"$logfile" 2>&1
+}
+
+case $1 in
+   restart)
+      echo "Restarting $name"
+      echo "`date +%x.%H%M%S` restarting $name" >>"$logfile"
+
+      kill `cat "$ppidfile"` 2>/dev/null
+
+      start
+      ;;
+   start)
+      echo "Starting $name"
+
+      if kill -0 `cat "$ppidfile"` ;then
+         echo "$name: already running"
+         exit 2
+      fi
+
+      start
+      ;;
+   stop)
+      echo "Stopping $name"
+      echo "`date +%x.%H%M%S` stopping $name" >>"$logfile"
+
+      kill `cat "$ppidfile"` 2>/dev/null
+      exit $?
+      ;;
+   status)
+      if kill -0 `cat "$pidfile" 2>/dev/null` 2>/dev/null ;then
+         echo "$name: running with pid `cat "$pidfile"`"
+      else
+         echo "$name: stopped or insufficient privileges"
+      fi
+      ;;
+   *)
+      echo "";
+      exit 2;
+      ;;
+esac

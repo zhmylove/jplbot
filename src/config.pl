@@ -20,6 +20,8 @@ $loop_sleep_time = 60;
 $conference_server = 'conference.jabber.ru';
 # MUC forums (chatrooms) with their passwords
 %room_passwords = ('ubuntulinux' => 'ubuntu');
+# Number of distinct likes allowed per user
+$last_like_max = 3;
 # All colors, selected for the bombs
 @colors = (
    'бело-оранжевый', 'оранжевый',
