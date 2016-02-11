@@ -213,6 +213,20 @@ sub new_bot_message {
             "папа ^_^") if int(2*rand);
       }
 
+      when (/^(?:top|топ)\s*(\d*)\s*$/i) {
+         my $top;
+         my $topN = $1;
+
+         $topN = 10 if $topN eq "" || $topN < 1 || $topN > 25;
+
+         $top .= "$_($karma{$_}), " for (
+            sort {$karma{$b} <=> $karma{$a}} keys %karma
+         )[0..$topN-1];
+         $top =~ s/, $//;
+
+         $bot->SendGroupMessage($msg{'reply_to'}, $top);
+      }
+
       when (/^help\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$src: я написал тебе в личку");
@@ -223,6 +237,7 @@ sub new_bot_message {
             " date                  -- вывести дату\n" .
             " fortune               -- вывеси цитату\n" .
             " karma       nick      -- вывести карму\n" .
+            " top                   -- вывести топ по карме\n" .
             " sayto      /nick/text -- сказать пользователю\n" .
             " time                  -- вывести время\n" .
             "\n" .
@@ -316,7 +331,7 @@ sub new_bot_message {
                }
 
                if ($type{'image'}) {
-                  my $length = $response->header('Content-Length') // -1;;
+                  my $length = $response->header('Content-Length') // -1;
                   $length = -1 unless $length > 0;
 
                   while ($length =~ s/(?<=\d)(?=\d{3}\b)/ /){}
