@@ -307,6 +307,7 @@ sub new_bot_message {
          my $uri = $1;
          my $ua = LWP::UserAgent->new();
          my %type;
+         my $dead = 0;
          $ua->timeout(10);
          $ua->env_proxy;
          $ua->agent('Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:46.0)' .
@@ -314,6 +315,8 @@ sub new_bot_message {
 
          $ua->add_handler(response_header => sub {
                my $response = shift;
+
+               return if $dead;
                undef %type;
 
                if (scalar $response->code >= 400) {
@@ -321,7 +324,8 @@ sub new_bot_message {
                      "$src: сервер вернул код: " .
                      $response->code . ", разбирайся сам!");
 
-                  die;
+                  $dead = 1;
+                  return;
                }
 
                foreach($response->header("Content-type")){
@@ -340,16 +344,17 @@ sub new_bot_message {
                   $bot->SendGroupMessage($msg{'reply_to'},
                      "$src: Content-Length: $length байт.");
 
-                  die;
+                  $dead = 1;
+                  return;
                }
             });
 
          $ua->add_handler(response_done => sub {
                my $response = shift;
 
-               if ($type{'image'}) {
-                  # do nothing for all other chunks of response
-               } elsif ($type{'html'}) {
+               return if $dead;
+
+               if ($type{'html'}) {
                   my $content = $response->decoded_content // '';
 
                   return if scalar $response->code < 200 || 
