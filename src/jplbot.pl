@@ -336,6 +336,8 @@ sub new_bot_message {
                }
 
                if ($type{'image'}) {
+                  return if $response->code >= 300;
+
                   my $length = $response->header('Content-Length') // -1;
                   $length = -1 unless $length > 0;
 
@@ -354,7 +356,9 @@ sub new_bot_message {
 
                return if $dead;
 
-               if ($type{'html'}) {
+               if ($type{'image'}) {
+                  # do nothing for all other chunks of response
+               } elsif ($type{'html'}) {
                   my $content = $response->decoded_content // '';
 
                   return if scalar $response->code < 200 || 

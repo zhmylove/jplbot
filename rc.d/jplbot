@@ -1,4 +1,5 @@
 #!/bin/sh
+# made by: KorG
 
 # PROVIDE: jplbot
 # REQUIRE: LOGIN
@@ -35,6 +36,7 @@ case $1 in
       echo "`date +%x.%H%M%S` restarting $name" >>"$logfile"
 
       kill `cat "$ppidfile"` 2>/dev/null
+      while [ -r "$ppidfile" ]; do printf . ;sleep 1 ;done
 
       start
       ;;
