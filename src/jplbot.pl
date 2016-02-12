@@ -314,6 +314,7 @@ sub new_bot_message {
 
          $ua->add_handler(response_header => sub {
                my $response = shift;
+               undef %type;
 
                if (scalar $response->code >= 400) {
                   $bot->SendGroupMessage($msg{'reply_to'},
