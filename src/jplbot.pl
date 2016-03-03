@@ -26,6 +26,7 @@ our $loop_sleep_time = 60;
 our $conference_server = 'conference.jabber.ru';
 our %room_passwords = ('ubuntulinux' => 'ubuntu');
 our $last_like_max = 3;
+our $to_me_max = 150;
 our $colors_minimum = 3;
 our @colors = (
    'бело-оранжевый', 'оранжевый',
@@ -52,6 +53,7 @@ my %bomb_time;
 my %bomb_correct;
 my %bomb_resourse;
 my %bomb_nick;
+my %to_me;
 my $last_bomb_time = 0;
 my %last_google = ('request','');
 my %last_like;
@@ -429,7 +431,7 @@ sub new_bot_message {
             "$src: и тебе доброе утро!");
       }
 
-      when (/^ку[\s!]*\b/i || /^(?:всем\s*)?прив\w*[.\s!]*$/i ||
+      when (/^ку[\s!]*\b/i || /^(?:всем\s*)?приве\w*[.\s!]*$/i ||
          /^здаро\w*\s*/) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "Привет, привет!");
@@ -564,8 +566,18 @@ sub new_bot_message {
             }
          }
 
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: how about NO, братиша?") if $to_me;
+         if ($to_me) {
+            my $count = scalar keys %to_me;
+            
+            $count = int($to_me_max * rand) if ($count >= $to_me_max);
+
+            $bot->SendGroupMessage($msg{'reply_to'},
+               # you require more random values
+               "$src: " . $to_me{ (keys %to_me)[int($count * rand)] }
+            ) if ($count);
+
+            $to_me{$count} = $msg{'body'} if ($msg{'body'} =~ m{[^\s]});
+         }
       }
    }
 }
