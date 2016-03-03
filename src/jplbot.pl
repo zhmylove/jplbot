@@ -569,7 +569,7 @@ sub new_bot_message {
          if ($to_me) {
             my $count = scalar keys %to_me;
             
-            $count = int($to_me_max * rand) if ($count >= $to_me_max);
+            $count = int(($to_me_max - 1) * rand) + 1 if ($count >= $to_me_max);
 
             $bot->SendGroupMessage($msg{'reply_to'},
                # you require more random values
