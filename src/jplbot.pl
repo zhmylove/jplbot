@@ -26,7 +26,9 @@ our $loop_sleep_time = 60;
 our $conference_server = 'conference.jabber.ru';
 our %room_passwords = ('ubuntulinux' => 'ubuntu');
 our $last_like_max = 3;
-our $to_me_max = 150;
+our $tome_file = './tome.txt';
+our $tome_max = 300;
+our $tome_msg_max = 300;
 our $colors_minimum = 3;
 our @colors = (
    'бело-оранжевый', 'оранжевый',
@@ -53,7 +55,7 @@ my %bomb_time;
 my %bomb_correct;
 my %bomb_resourse;
 my %bomb_nick;
-my %to_me;
+my %tome;
 my $last_bomb_time = 0;
 my %last_google = ('request','');
 my %last_like;
@@ -62,6 +64,11 @@ my %col_hash;
 my %room_list;
 $col_hash{lc($_)} = 1 for @colors;
 $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
+
+my $tome_mode = -r $tome_file ? "+<" : "+>";
+open my $tome_fh, "$tome_mode:utf8", $tome_file or
+warn "Can't open $tome_file!";
+chomp, $tome{$.} = $_ while (<$tome_fh>);
 
 my $start_time = time;
 my $qname = quotemeta($name);
@@ -72,12 +79,21 @@ my $rB = "[^$rsymbols]";
 
 $SIG{'INT'} = \&shutdown;
 $SIG{'TERM'} = \&shutdown;
+$SIG{'USR1'} = \&debug;
 binmode STDOUT, ':utf8';
 srand;
+
+sub debug {
+   return # for debugging purposes
+}
 
 sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
+
+   truncate $tome_fh, 0 or warn "Unable to truncate $tome_fh!";
+   say $tome_fh join "\n", values %tome and say "Tome saved to: $tome_file";
+
    say "Uptime: " . (time - $start_time);
 
    exit 0;
@@ -174,7 +190,7 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-   my $to_me = ($msg{'body'} =~ s{^$qname: }{});
+   my $tome = ($msg{'body'} =~ s{^$qname: }{});
 
    if ($msg{'type'} eq "chat") {
       $bot->SendPersonalMessage($msg{'reply_to'},
@@ -486,6 +502,13 @@ sub new_bot_message {
                         return;
                      }
 
+                     if ($src eq $name) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$src: отказать.");
+
+                        return;
+                     }
+
                      if (defined $bomb_time{lc($nick)}) {
                         $bot->SendGroupMessage($msg{'reply_to'},
                            "$src: на $nick уже установлена бомба.");
@@ -566,17 +589,20 @@ sub new_bot_message {
             }
          }
 
-         if ($to_me) {
-            my $count = scalar keys %to_me;
-            
-            $count = int(($to_me_max - 1) * rand) + 1 if ($count >= $to_me_max);
+         if ($tome) {
+            my $count = scalar keys %tome;
+
+            $count = int(($tome_max - 1) * rand) + 1 if ($count >= $tome_max);
 
             $bot->SendGroupMessage($msg{'reply_to'},
                # you require more random values
-               "$src: " . $to_me{ (keys %to_me)[int($count * rand)] }
+               "$src: " . $tome{ (keys %tome)[int($count * rand)] }
             ) if ($count);
 
-            $to_me{$count} = $msg{'body'} if ($msg{'body'} =~ m{[^\s]});
+            if ($msg{'body'} =~ m{[^\s\n]}) {
+               my $txt = (split '\n', $msg{'body'})[0];
+               $tome{$count} = substr $txt, 0, $tome_msg_max;
+            }
          }
       }
    }
