@@ -22,8 +22,12 @@ $conference_server = 'conference.jabber.ru';
 %room_passwords = ('ubuntulinux' => 'ubuntu');
 # Number of distinct likes allowed per user
 $last_like_max = 3;
+# File used for bot addressed messages
+$tome_file = './tome.txt';
 # Maximum number of bot addressed messages per user
-$to_me_max = 150;
+$tome_max = 300;
+# Maximum message length
+$tome_msg_max = 300;
 # All colors, selected for the bombs
 @colors = (
    'бело-оранжевый', 'оранжевый',
