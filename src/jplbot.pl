@@ -65,10 +65,12 @@ my %room_list;
 $col_hash{lc($_)} = 1 for @colors;
 $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
-my $tome_mode = -r $tome_file ? "+<" : "+>";
-open my $tome_fh, "$tome_mode:utf8", $tome_file or
-warn "Can't open $tome_file!";
-chomp, $tome{$.} = $_ while (<$tome_fh>);
+if (-r $tome_file) {
+   open my $tome_fh, "<:utf8", $tome_file or warn "Can't open $tome_file!";
+   chomp, $tome{$.} = $_ while (<$tome_fh>);
+   close $tome_fh;
+   say "Tome records: " . keys %tome if scalar keys %tome;
+}
 
 my $start_time = time;
 my $qname = quotemeta($name);
@@ -91,7 +93,7 @@ sub shutdown {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
 
-   truncate $tome_fh, 0 or warn "Unable to truncate $tome_fh!";
+   open my $tome_fh, ">:utf8", $tome_file or warn "Can't open $tome_file!";
    say $tome_fh join "\n", values %tome and say "Tome saved to: $tome_file";
 
    say "Uptime: " . (time - $start_time);
@@ -601,7 +603,7 @@ sub new_bot_message {
 
             if ($msg{'body'} =~ m{[^\s\n]}) {
                my $txt = (split '\n', $msg{'body'})[0];
-               $tome{$count} = substr $txt, 0, $tome_msg_max;
+               $tome{++$count} = substr $txt, 0, $tome_msg_max;
             }
          }
       }
