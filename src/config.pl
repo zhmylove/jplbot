@@ -14,6 +14,8 @@ $port = 5222;
 $username = 'aimbot';
 # Password for this username
 $password = 'password';
+# Maximum number of messages per hour
+$max_messages_per_hour = 150;
 # Interval in seconds between background_checks() calee
 $loop_sleep_time = 60;
 # Address of a conference server, where forums are expected to be

@@ -22,6 +22,7 @@ our $server = 'zhmylove.ru';
 our $port = 5222;
 our $username = 'aimbot';
 our $password = 'password';
+our $max_messages_per_hour = 7200;
 our $loop_sleep_time = 60;
 our $conference_server = 'conference.jabber.ru';
 our %room_passwords = ('ubuntulinux' => 'ubuntu');
@@ -67,7 +68,7 @@ $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
 if (-r $tome_file) {
    open my $tome_fh, "<:utf8", $tome_file or warn "Can't open $tome_file!";
-   chomp, $tome{$.} = $_ while (<$tome_fh>);
+   chomp, $tome{$_} = 1 while (<$tome_fh>);
    close $tome_fh;
    say "Tome records: " . keys %tome if scalar keys %tome;
 }
@@ -94,7 +95,7 @@ sub shutdown {
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
 
    open my $tome_fh, ">:utf8", $tome_file or warn "Can't open $tome_file!";
-   say $tome_fh join "\n", values %tome and say "Tome saved to: $tome_file";
+   say $tome_fh join "\n", keys %tome and say "Tome saved to: $tome_file";
 
    say "Uptime: " . (time - $start_time);
 
@@ -192,7 +193,7 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-   my $tome = ($msg{'body'} =~ s{^$qname: }{});
+   my $forme = ($msg{'body'} =~ s{^$qname: }{});
 
    if ($msg{'type'} eq "chat") {
       $bot->SendPersonalMessage($msg{'reply_to'},
@@ -529,7 +530,7 @@ sub new_bot_message {
 
                      my %selected_colors;
                      while($col_count != keys %selected_colors){
-                        $selected_colors{$colors[int($#colors * rand)]} = 1;
+                        $selected_colors{$colors[rand $#colors]} = 1;
                      }
 
                      my $selected_colors_t = join ', ', (
@@ -591,19 +592,18 @@ sub new_bot_message {
             }
          }
 
-         if ($tome) {
-            my $count = scalar keys %tome;
-
-            $count = int(($tome_max - 1) * rand) + 1 if ($count >= $tome_max);
+         if ($forme) {
+            my $rndkey = (keys %tome)[rand keys %tome];
 
             $bot->SendGroupMessage($msg{'reply_to'},
                # you require more random values
-               "$src: " . $tome{ (keys %tome)[int($count * rand)] }
-            ) if ($count);
+               "$src: $rndkey"
+            ) if ($rndkey);
 
             if ($msg{'body'} =~ m{[^\s\n]}) {
                my $txt = (split '\n', $msg{'body'})[0];
-               $tome{++$count} = substr $txt, 0, $tome_msg_max;
+               delete $tome{ $rndkey } if (keys %tome >= $tome_max);
+               $tome{$txt} = substr $txt, 0, $tome_msg_max;
             }
          }
       }
@@ -629,4 +629,5 @@ my $bot = Net::Jabber::Bot->new(
    SayToDB => \%sayto,
 );
 
+$bot->max_messages_per_hour($max_messages_per_hour);
 $bot->Start();
