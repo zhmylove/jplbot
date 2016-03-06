@@ -87,6 +87,8 @@ binmode STDOUT, ':utf8';
 srand;
 
 sub debug {
+   $DB::single = 1;
+
    return # for debugging purposes
 }
 
