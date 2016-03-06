@@ -10,15 +10,19 @@ name=jplbot
 rcvar=jplbot_enable
 
 user="jplbot"
-command="/usr/local/jplbot/jplbot.pl"
+workdir="/usr/local/jplbot/"
+executable="/usr/local/jplbot/jplbot.pl"
 pidfile="/var/run/jplbot.pid"
 ppidfile="/var/run/jplbot.ppid"
 logfile="/var/log/jplbot.log"
 
+PERLDB_OPTS=NonStop
+export PERLDB_OPTS
+
 load_rc_config $name
 
-if ! cd `dirname "$command"` ;then
-   echo "$name: can't chdir to dirname $command" >&2
+if ! cd "$workdir" ;then
+   echo "$name: can't chdir to $workdir" >&2
    exit 1
 fi
 
@@ -27,7 +31,7 @@ start() {
    echo "`date +%x.%H%M%S` starting $name" >>"$logfile"
 
    /usr/sbin/daemon -P "$ppidfile" -p "$pidfile" -ru "$user" \
-      "$command" </dev/null >>"$logfile" 2>&1
+      "$executable" </dev/null >>"$logfile" 2>&1
 }
 
 case $1 in
