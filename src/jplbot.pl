@@ -83,6 +83,7 @@ my $rB = "[^$rsymbols]";
 $SIG{'INT'} = \&shutdown;
 $SIG{'TERM'} = \&shutdown;
 $SIG{'USR1'} = \&debug;
+$SIG{'USR2'} = \&save_data;
 binmode STDOUT, ':utf8';
 srand;
 
@@ -92,12 +93,16 @@ sub debug {
    return # for debugging purposes
 }
 
-sub shutdown {
+sub save_data {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
 
    open my $tome_fh, ">:utf8", $tome_file or warn "Can't open $tome_file!";
    say $tome_fh join "\n", keys %tome and say "Tome saved to: $tome_file";
+}
+
+sub shutdown {
+   save_data
 
    say "Uptime: " . (time - $start_time);
 
