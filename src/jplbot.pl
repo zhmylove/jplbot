@@ -79,6 +79,7 @@ my $bot_address = "https://github.com/tune-it/jplbot"; # kinda copyleft
 my $rsymbols = "\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}";
 my $rb = "[$rsymbols]";
 my $rB = "[^$rsymbols]";
+my $debug_request = 0;
 
 $SIG{'INT'} = \&shutdown;
 $SIG{'TERM'} = \&shutdown;
@@ -89,6 +90,7 @@ srand;
 
 sub debug {
    $DB::single = 1;
+   $debug_request = 1;
 
    return # for debugging purposes
 }
@@ -162,6 +164,8 @@ sub bomb_user {
 
    $bot->SendGroupMessage($dst, "$nick: ты взорвался!");
 
+   $nick =~ s/'/\\27/g;
+
    my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$dst' " .
    "type='set'><query xmlns='http://jabber.org/protocol/muc#admin'><item " .
    "nick='$nick' role='none'><reason>Bombed!</reason></item></query></iq>";
@@ -195,6 +199,9 @@ sub background_checks {
 
 sub new_bot_message {
    my %msg = @_;
+
+   $DB::single = 1 if $debug_request;
+
    my $bot = $msg{'bot_object'};
 
    my ($resource, $src) = split '/', $msg{'from_full'};
