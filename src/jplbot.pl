@@ -224,7 +224,23 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-   my $forme = ($msg{'body'} =~ s{^$qname: }{});
+
+   if ($msg{'body'} =~ s{^$qname: }{}) {
+      my $rndkey = (keys %tome)[rand keys %tome];
+
+      $bot->SendGroupMessage($msg{'reply_to'},
+         # you require more random values
+         "$src: $rndkey"
+      ) if ($rndkey);
+
+      if ($msg{'body'} =~ m{[^\s\n]}) {
+         my $txt = (split '\n', $msg{'body'})[0];
+         delete $tome{ $rndkey } if (keys %tome >= $tome_max);
+         $tome{$txt} = substr $txt, 0, $tome_msg_max;
+      }
+
+      return;
+   }
 
    if ($msg{'type'} eq "chat") {
       $bot->SendPersonalMessage($msg{'reply_to'},
@@ -622,21 +638,6 @@ sub new_bot_message {
                }
 
                return;
-            }
-         }
-
-         if ($forme) {
-            my $rndkey = (keys %tome)[rand keys %tome];
-
-            $bot->SendGroupMessage($msg{'reply_to'},
-               # you require more random values
-               "$src: $rndkey"
-            ) if ($rndkey);
-
-            if ($msg{'body'} =~ m{[^\s\n]}) {
-               my $txt = (split '\n', $msg{'body'})[0];
-               delete $tome{ $rndkey } if (keys %tome >= $tome_max);
-               $tome{$txt} = substr $txt, 0, $tome_msg_max;
             }
          }
       }
