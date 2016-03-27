@@ -159,6 +159,16 @@ sub allowed_like {
    return 0; # just because
 }
 
+sub give_role {
+   my ($bot, $dst, $nick, $role) = @_;
+
+   my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$dst' " .
+   "type='set'><query xmlns='http://jabber.org/protocol/muc#admin'><item " .
+   "nick='$nick' role='$role'></item></query></iq>";
+
+   $bot->jabber_client->SendXML($xml);
+}
+
 sub bomb_user {
    my ($bot, $user) = @_;
    my $dst = $bomb_resourse{lc($user)};
@@ -183,11 +193,7 @@ sub bomb_user {
    }
    $current =~ s/'/\&apos;/g;
 
-   my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$dst' " .
-   "type='set'><query xmlns='http://jabber.org/protocol/muc#admin'><item " .
-   "nick='$current' role='none'><reason>Bombed!</reason></item></query></iq>";
-
-   $bot->jabber_client->SendXML($xml);
+   give_role($bot, $dst, $current, 'none');
 }
 
 sub background_checks {
@@ -243,6 +249,12 @@ sub new_bot_message {
    }
 
    if ($msg{'type'} eq "chat") {
+      if ($msg{'body'} eq "voice" || $msg{'body'} eq "голос") {
+         give_role($bot, $resource, $src, 'participant');
+         $bot->SendPersonalMessage($msg{'reply_to'}, "Вам предоставлен голос");
+         return;
+      }
+
       $bot->SendPersonalMessage($msg{'reply_to'},
          "Я не работаю в привате. Если Вы нашли проблему, " .
          "у Вас есть предложения или пожелания, пишите issue на $bot_address");
