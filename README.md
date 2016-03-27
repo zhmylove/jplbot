@@ -19,6 +19,8 @@ The command list follows:
 * g:txt
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 
+To request voice, just send a private message to bot with body: "voice".
+
 Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.ru/web/korg/home/-/blogs/пишем-простенького-jabber-бота-на-perl).  
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
 
