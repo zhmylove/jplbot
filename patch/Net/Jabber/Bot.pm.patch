@@ -1,5 +1,14 @@
 --- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
-+++ Bot.pm	2016-01-13 22:36:11.792165653 +0300
++++ Bot.pm	2016-03-27 16:32:40.369766217 +0300
+@@ -12,7 +12,7 @@
+ use Time::HiRes;
+ use Sys::Hostname;
+ use Log::Log4perl qw(:easy);
+-#use Data::Dumper; #For testing only.
++#use Data::Dumper; #For @ret;
+ 
+ 
+ coerce Bool, from Str, 
 @@ -49,17 +49,18 @@
  has 'loop_sleep_time'     => (isa => PosNum, is => 'rw', default => 5);
  has 'process_timeout'     => (isa => PosNum, is => 'rw', default => 5);
@@ -99,7 +108,14 @@
  
      # Call the message callback if it's defined.
      if( defined $self->message_function) {
-@@ -789,6 +794,25 @@
+@@ -786,9 +791,37 @@
+     my $from = $presence->GetFrom();
+     $from = "." if(!defined $from);
+ 
++    # get real JID from XML behind of GetChild()
++    $presence->GetXML() =~ m{jid='([^']+)'};
++    my $real_jid = (split '/', $1 // $from)[0];
++
      my $status = $presence->GetStatus();
      $status = "." if(!defined $status);
  
@@ -111,21 +127,26 @@
 +          delete $self->JidDB->{$forum}->{$nick};
 +       }
 +
++       if(defined $self->JidDB->{"jid_$forum"}->{$nick}) {
++          delete $self->JidDB->{"jid_$forum"}->{$nick};
++       }
++
 +       return;
 +    }
 +
 +    # "register" user on any other types
 +    $self->JidDB->{$forum}->{$nick} = 1;
++    $self->JidDB->{"jid_$forum"}->{$nick} = $real_jid;
 +
 +    # call SayTo subroutine if needed
-+    if(defined $self->SayToDB->{$forum}->{$nick}) {
++    if(defined $self->SayToDB->{$forum}->{lc($nick)}) {
 +       &{ $self->SayTo }($self, $forum, $nick);
 +    }
 +
      DEBUG("Presence From $from t=$type s=$status");
      DEBUG("Presence XML: " . $presence->GetXML());
  }
-@@ -896,7 +920,8 @@
+@@ -896,7 +929,8 @@
  Assures message size does not exceed a limit and chops it into pieces if need be.
  
  NOTE: non-printable characters (unicode included) will be stripped before sending to the server via:
@@ -135,7 +156,7 @@
  
  =cut
  
-@@ -989,7 +1014,8 @@
+@@ -989,7 +1023,8 @@
  
      # Strip out anything that's not a printable character
      # Now with unicode support?
@@ -145,14 +166,33 @@
  
      my $message_length = length($message_chunk);
      DEBUG("Sending message $yday-$hour-$messages_this_hour $message_length bytes to $recipient");
-@@ -1134,6 +1160,22 @@
+@@ -1134,6 +1169,45 @@
      $self->jabber_client->Subscription(type=>"unsubscribe", to=>$user);
      $self->jabber_client->Subscription(type=>"unsubscribed",to=>$user);
  }
 +
++=item B<IsInRoomJid>
++
++Returns grep if JID is present at specified forum
++
++=cut
++
++sub IsInRoomJid {
++    my $self = shift;
++    my $forum = shift;
++    my $jid = shift;
++    my $qnick = quotemeta($jid);
++
++    return 0 if(
++       !defined $forum || !defined $jid || !defined $self->JidDB->{"jid_$forum"}
++    );
++
++    my @ret = grep {/^$qnick$/i} values $self->JidDB->{"jid_$forum"};
++    return @ret;
++}
 +=item B<IsInRoom>
 +
-+Returns 1 or 0 if nick is present at specified forum
++Returns grep if nick is present at specified forum
 +
 +=cut
 +
@@ -160,10 +200,14 @@
 +    my $self = shift;
 +    my $forum = shift;
 +    my $nick = shift;
++    my $qnick = quotemeta($nick);
 +
-+    return 0 if(!defined $forum || !defined $nick);
++    return 0 if(
++       !defined $forum || !defined $nick || !defined $self->JidDB->{$forum}
++    );
 +
-+    return $self->JidDB->{$forum}->{$nick} || 0;
++    my @ret = grep {/^$qnick$/i} keys $self->JidDB->{$forum};
++    return @ret;
 +}
  =back
  
