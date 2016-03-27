@@ -56,6 +56,7 @@ my %bomb_time;
 my %bomb_correct;
 my %bomb_resourse;
 my %bomb_nick;
+my %bomb_jid;
 my %tome;
 my $last_bomb_time = 0;
 my %last_google = ('request','');
@@ -101,6 +102,14 @@ sub save_data {
 
    open my $tome_fh, ">:utf8", $tome_file or warn "Can't open $tome_file!";
    say $tome_fh join "\n", keys %tome and say "Tome saved to: $tome_file";
+}
+
+sub get_jid {
+   my $room = shift // '.';
+   my $nick = shift // '.';
+
+   return $nick unless defined $jid_DB{"jid_$room"};
+   return $jid_DB{"jid_$room"}->{$nick} // $nick;
 }
 
 sub shutdown {
@@ -153,22 +162,30 @@ sub allowed_like {
 sub bomb_user {
    my ($bot, $user) = @_;
    my $dst = $bomb_resourse{lc($user)};
+   my $room = (split '@', $dst)[0];
    my $nick = $bomb_nick{lc($user)};
+   my $jid = $bomb_jid{lc($user)};
 
    delete $bomb_time{lc($user)};
    delete $bomb_correct{lc($user)};
    delete $bomb_resourse{lc($user)};
    delete $bomb_nick{lc($user)};
+   delete $bomb_jid{lc($user)};
 
-   return unless $bot->IsInRoom((split '@', $dst)[0], $nick);
+   return unless $bot->IsInRoomJid($room, $jid);
 
-   $bot->SendGroupMessage($dst, "$nick: ты взорвался!");
+   $bot->SendGroupMessage($dst,
+      "Детка, только дай мне повод и я взорву для тебя весь город!");
 
-   $nick =~ s/'/\\27/g;
+   my $current = '';
+   foreach (keys $jid_DB{"jid_$room"}) {
+      $current = $_ if $jid_DB{"jid_$room"}->{$_} eq $jid;
+   }
+   $current =~ s/'/\&apos;/g;
 
    my $xml = "<iq from='$username\@$server/$name' id='korg1' to='$dst' " .
    "type='set'><query xmlns='http://jabber.org/protocol/muc#admin'><item " .
-   "nick='$nick' role='none'><reason>Bombed!</reason></item></query></iq>";
+   "nick='$current' role='none'><reason>Bombed!</reason></item></query></iq>";
 
    $bot->jabber_client->SendXML($xml);
 }
@@ -489,6 +506,7 @@ sub new_bot_message {
             delete $bomb_correct{lc($src)};
             delete $bomb_resourse{lc($src)};
             delete $bomb_nick{lc($src)};
+            delete $bomb_jid{lc($src)};
 
             $bot->SendGroupMessage($msg{'reply_to'},
                "$src, расслабься, это был всего-лишь розыгрыш!");
@@ -557,6 +575,7 @@ sub new_bot_message {
                      $bomb_correct{lc($nick)} = (keys %selected_colors)[0];
                      $bomb_resourse{lc($nick)} = $resource;
                      $bomb_nick{lc($nick)} = $nick;
+                     $bomb_jid{lc($nick)} = get_jid($room, $nick);
 
                      my $txt = "Привет от $src, $nick! " .
                      "Я хочу сыграть с тобой в игру.\n" .
