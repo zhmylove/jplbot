@@ -1,5 +1,5 @@
 --- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
-+++ Bot.pm	2016-03-27 16:32:40.369766217 +0300
++++ Bot.pm	2016-04-02 19:05:37.528420208 +0300
 @@ -12,7 +12,7 @@
  use Time::HiRes;
  use Sys::Hostname;
@@ -85,7 +85,18 @@
                                    );
  
      $self->forum_join_time->{$forum_name} = time;
-@@ -649,21 +668,7 @@
+@@ -497,7 +516,9 @@
+     my $last_background = time - $time_between_background_routines - 1; # Call background process every so often...
+     my $counter = 0; # Keep track of how many times we've looped. Not sure if we'll use this long term.
+ 
+-    while(1) { # Loop for ever!
++    my $watchdog = 10; # Loop limit
++
++    while($watchdog > 0) { # Loop for ever!^W^W until limit
+         # Process and re-connect if you have to.
+         my $reconnect_timeout = 1;
+         eval {$self->Process($process_timeout)};
+@@ -649,21 +670,7 @@
  
      # Determine if this message was addressed to me. (groupchat only)
      my $bot_address_from;
@@ -108,7 +119,7 @@
  
      # Call the message callback if it's defined.
      if( defined $self->message_function) {
-@@ -786,9 +791,37 @@
+@@ -786,9 +793,37 @@
      my $from = $presence->GetFrom();
      $from = "." if(!defined $from);
  
@@ -146,7 +157,7 @@
      DEBUG("Presence From $from t=$type s=$status");
      DEBUG("Presence XML: " . $presence->GetXML());
  }
-@@ -896,7 +929,8 @@
+@@ -896,7 +931,8 @@
  Assures message size does not exceed a limit and chops it into pieces if need be.
  
  NOTE: non-printable characters (unicode included) will be stripped before sending to the server via:
@@ -156,7 +167,7 @@
  
  =cut
  
-@@ -989,7 +1023,8 @@
+@@ -989,7 +1025,8 @@
  
      # Strip out anything that's not a printable character
      # Now with unicode support?
@@ -166,7 +177,7 @@
  
      my $message_length = length($message_chunk);
      DEBUG("Sending message $yday-$hour-$messages_this_hour $message_length bytes to $recipient");
-@@ -1134,6 +1169,45 @@
+@@ -1134,6 +1171,45 @@
      $self->jabber_client->Subscription(type=>"unsubscribe", to=>$user);
      $self->jabber_client->Subscription(type=>"unsubscribed",to=>$user);
  }
