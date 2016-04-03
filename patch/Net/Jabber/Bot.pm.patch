@@ -1,15 +1,19 @@
 --- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
-+++ Bot.pm	2016-04-03 15:41:32.029288021 +0300
-@@ -12,7 +12,7 @@
++++ Bot.pm	2016-04-03 21:07:34.242940286 +0300
+@@ -12,7 +12,11 @@
  use Time::HiRes;
  use Sys::Hostname;
  use Log::Log4perl qw(:easy);
 -#use Data::Dumper; #For testing only.
 +#use Data::Dumper; #For @ret;
++
++
++my $watchdog_default = 120; # Reconnect loop maximum value
++my $watchdog = $watchdog_default; # Reconnect loop limit
  
  
  coerce Bool, from Str, 
-@@ -49,17 +49,18 @@
+@@ -49,17 +53,18 @@
  has 'loop_sleep_time'     => (isa => PosNum, is => 'rw', default => 5);
  has 'process_timeout'     => (isa => PosNum, is => 'rw', default => 5);
  has 'from_full'           => (isa => Str, is => 'rw', default => sub{my $self = shift;
@@ -31,7 +35,7 @@
  has 'forum_join_time'        => (isa => HashRef[Int], is => 'rw', default => sub{{}}); # List of when we joined each forum
  has 'out_messages_per_second' => (isa => PosNum, is => 'rw', default => sub{5});
  has 'message_delay'           => (isa => PosNum, is => 'rw', default => sub {1/5});
-@@ -67,6 +68,10 @@
+@@ -67,6 +72,10 @@
  has 'max_message_size'        => (isa => HundredInt, is => 'rw', default => 1000000);
  has 'max_messages_per_hour'   => (isa => PosInt,     is => 'rw', default => 1000000);
  
@@ -42,7 +46,7 @@
  # Initialize this hour's message count.
  has 'messages_sent_today'     => (isa => 'HashRef', is => 'ro', default => sub{{(localtime)[7] => {(localtime)[2] => 0}}});
  
-@@ -294,6 +299,18 @@
+@@ -294,6 +303,18 @@
  
  safetey: 166
  
@@ -61,7 +65,7 @@
  =back
  
  =cut
-@@ -422,7 +439,7 @@
+@@ -422,7 +443,7 @@
      $self->Process(5);
  
      foreach my $forum (keys %{$self->forums_and_responses}) {
@@ -70,7 +74,7 @@
      }
  
      INFO("Connected to server '" . $self->server . "' successfully");
-@@ -443,12 +460,14 @@
+@@ -443,12 +464,14 @@
  sub JoinForum {
      my $self = shift;
      my $forum_name = shift;
@@ -85,18 +89,16 @@
                                    );
  
      $self->forum_join_time->{$forum_name} = time;
-@@ -497,7 +516,9 @@
+@@ -497,7 +520,7 @@
      my $last_background = time - $time_between_background_routines - 1; # Call background process every so often...
      my $counter = 0; # Keep track of how many times we've looped. Not sure if we'll use this long term.
  
 -    while(1) { # Loop for ever!
-+    my $watchdog = 10; # Loop limit
-+
 +    while($watchdog-- > 0) { # Loop for ever!^W^W until limit
          # Process and re-connect if you have to.
          my $reconnect_timeout = 1;
          eval {$self->Process($process_timeout)};
-@@ -649,21 +670,7 @@
+@@ -649,24 +672,12 @@
  
      # Determine if this message was addressed to me. (groupchat only)
      my $bot_address_from;
@@ -119,7 +121,12 @@
  
      # Call the message callback if it's defined.
      if( defined $self->message_function) {
-@@ -786,9 +793,37 @@
++        $watchdog = $watchdog_default; # Reset watchdog on every new message
++        
+         $self->message_function->(bot_object => $self,
+                                   from_full => $from_full,
+                                   body => $body,
+@@ -786,9 +797,37 @@
      my $from = $presence->GetFrom();
      $from = "." if(!defined $from);
  
@@ -157,7 +164,7 @@
      DEBUG("Presence From $from t=$type s=$status");
      DEBUG("Presence XML: " . $presence->GetXML());
  }
-@@ -896,7 +931,8 @@
+@@ -896,7 +935,8 @@
  Assures message size does not exceed a limit and chops it into pieces if need be.
  
  NOTE: non-printable characters (unicode included) will be stripped before sending to the server via:
@@ -167,7 +174,7 @@
  
  =cut
  
-@@ -989,7 +1025,8 @@
+@@ -989,7 +1029,8 @@
  
      # Strip out anything that's not a printable character
      # Now with unicode support?
@@ -177,7 +184,7 @@
  
      my $message_length = length($message_chunk);
      DEBUG("Sending message $yday-$hour-$messages_this_hour $message_length bytes to $recipient");
-@@ -1134,6 +1171,45 @@
+@@ -1134,6 +1175,45 @@
      $self->jabber_client->Subscription(type=>"unsubscribe", to=>$user);
      $self->jabber_client->Subscription(type=>"unsubscribed",to=>$user);
  }
