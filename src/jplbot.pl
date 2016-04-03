@@ -673,6 +673,7 @@ my $bot = Net::Jabber::Bot->new(
    JidDB => \%jid_DB,
    SayTo => \&say_to,
    SayToDB => \%sayto,
+   shutdown => \&save_data,
 );
 
 $bot->max_messages_per_hour($max_messages_per_hour);
