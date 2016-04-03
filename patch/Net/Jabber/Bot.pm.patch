@@ -1,5 +1,5 @@
 --- Bot.pm.old	2016-01-09 19:49:41.801668822 +0300
-+++ Bot.pm	2016-04-02 19:05:37.528420208 +0300
++++ Bot.pm	2016-04-03 15:41:32.029288021 +0300
 @@ -12,7 +12,7 @@
  use Time::HiRes;
  use Sys::Hostname;
@@ -92,7 +92,7 @@
 -    while(1) { # Loop for ever!
 +    my $watchdog = 10; # Loop limit
 +
-+    while($watchdog > 0) { # Loop for ever!^W^W until limit
++    while($watchdog-- > 0) { # Loop for ever!^W^W until limit
          # Process and re-connect if you have to.
          my $reconnect_timeout = 1;
          eval {$self->Process($process_timeout)};
