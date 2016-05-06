@@ -15,8 +15,7 @@ The command list follows:
 * http://uri     -- show information about first found URI.
 * man://page     -- show link to the manpage on freebsd.org.
 * m:page
-* Ngoogle://txt  -- show Nth (1 by default) link of google search results.
-* g:txt
+* g:txt          -- transform txt into link and show the title
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 
 To request voice, just send a private message to bot with body: "voice".
@@ -28,13 +27,11 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * cpan Net::Jabber
 * cpan Net::Jabber::Bot
 * cpan LWP::Protocol::https
-* cpan Google::Search
 
 ## Files
 * src/jplbot.pl                        -- main executable file.
 * src/config.pl                        -- configuration file included when needed.
 * patch/Net/Jabber/Bot.pm.patch        -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
-* patch/Google/Search/Error.pm.patch   -- patch for Google::Search::Error to avoid a warning
 * rc.d/jplbot                          -- rc(8) script for FreeBSD
 
 ## What if ...
