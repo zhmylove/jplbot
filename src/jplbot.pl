@@ -9,7 +9,6 @@ no warnings 'experimental';
 use Net::Jabber::Bot;
 use Storable;
 use LWP;
-use Google::Search;
 
 # DEFAULT VALUES. don't change them here
 # see comments in the 'config.pl'
@@ -59,7 +58,6 @@ my %bomb_nick;
 my %bomb_jid;
 my %tome;
 my $last_bomb_time = 0;
-my %last_google = ('request','');
 my %last_like;
 my $col_count = int($colors_minimum + ($#colors - $colors_minimum + 1) * rand);
 my %col_hash;
@@ -261,6 +259,8 @@ sub new_bot_message {
       return;
    }
 
+   PARSE_MESSAGE: # for google://
+
    given ($msg{'body'}) {
 
       when (/^(?:date|дата)\s*$/i) {
@@ -383,6 +383,16 @@ sub new_bot_message {
             "$src: замётано.");
       }
 
+      when (m{(?:^|\s)(?:google|[гg]):/?/?(\S+)}i) {
+         return unless defined $1;
+
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$src: https://www.google.ru/search?q=$1");
+
+         $msg{'body'} = "https://www.google.ru/search?q=$1";
+         goto "PARSE_MESSAGE";
+      }
+
       when (m{(https?://\S+)}) {
          my $uri = $1;
          my $ua = LWP::UserAgent->new();
@@ -471,39 +481,6 @@ sub new_bot_message {
             "$1https://www.freebsd.org/cgi/man.cgi?query=$2");
       }
 
-      when (m{(?:^|\s)(\d?)(?:google|[гg]):/?/?(\S+)}i) {
-         return unless defined $2;
-
-         my $count = 0;
-         $count = $1 if (defined $1 && $1 ne "");
-
-         my $request = $2;
-
-         my $search = Google::Search->Web($request);
-         my $result;
-
-         if ($count < 1 || $count > 9) {
-            if ($last_google{'request'} ne $request) {
-               $last_google{'request'} = $request;
-               $last_google{'count'} = 1;
-            } else {
-               $last_google{'count'}++;
-            }
-
-            $count = $last_google{'count'};
-         }
-
-         for (1 .. $count) {
-            $result = $search->next->uri;
-         }
-
-         $result =~ s/%([A-F\d]{2})/chr hex $1/ieg;
-         utf8::decode($result);
-
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: $result");
-      }
-
       when (/^(?:(?:добро|все|ребя)\w*)*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$src: и тебе доброе утро!");
@@ -581,7 +558,7 @@ sub new_bot_message {
 
                      if (abs(time - $last_bomb_time) < 180) {
                         $bot->SendGroupMessage($msg{'reply_to'},
-                           "$src: у меня ещё не восполнен боезапас. Жди.");
+                           "$src: you require more vespene gas!");
 
                         return;
                      }
