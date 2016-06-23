@@ -1,47 +1,59 @@
 ### USER VARIABLES SECTION START #############################################
 #
-# Nick name and XMPP resource name used by bot. 
-$name = 'AimBot';
+# Nick name and XMPP resource name used by bot
+$cfg{name} = 'AimBot';
+
 # Path to file for karma saving routine
-$karmafile = '/tmp/karma';
-# Path to file for sayto saving routine
-$saytofile = '/tmp/sayto';
+$cfg{karmafile} = '/tmp/karma';
+
 # Address of XMPP server of the bot's account
-$server = 'zhmylove.ru';
+$cfg{server} = 'zhmylove.ru';
 # Port of XMPP server of the bot's account
-$port = 5222;
+$cfg{port} = 5222;
+
 # Username of bot's account on the server
-$username = 'aimbot';
+$cfg{username} = 'aimbot';
 # Password for this username
-$password = 'password';
+$cfg{password} = 'password';
+# Token for Telegram
+$cfg{token} = 'token';
+
 # Maximum number of messages per hour
-$max_messages_per_hour = 150;
+$cfg{max_messages_per_hour} = 150;
+
 # Interval in seconds between background_checks() calee
-$loop_sleep_time = 60;
+$cfg{loop_sleep_time} = 60;
+
 # Address of a conference server, where forums are expected to be
-$conference_server = 'conference.jabber.ru';
+$cfg{conference_server} = 'conference.jabber.ru';
 # MUC forums (chatrooms) with their passwords
-%room_passwords = ('ubuntulinux' => 'ubuntu');
+$cfg{room_passwords} = {'ubuntulinux' => 'ubuntu'};
+
 # Number of distinct likes allowed per user
-$last_like_max = 3;
+$cfg{last_like_max} = 3;
+
 # File used for bot addressed messages
-$tome_file = './tome.txt';
+$cfg{tome_file} = './tome.txt';
 # Maximum number of bot addressed messages per user
-$tome_max = 300;
+$cfg{tome_max} = 300;
 # Maximum message length
-$tome_msg_max = 300;
+$cfg{tome_msg_max} = 300;
+
 # All colors, selected for the bombs
-@colors = (
+$cfg{colors} = [
    'бело-оранжевый', 'оранжевый',
    'бело-зелёный', 'зелёный',
    'бело-синий', 'синий',
    'бело-коричневый', 'коричневый',
-);
+];
 # Minimum number of colors to select from @colors
-$colors_minimum = 3;
+$cfg{colors_minimum} = 3;
+
+# Path to file for sayto saving routine
+$cfg{saytofile} = '/tmp/sayto';
 # Maximum number of sayto messages per forum
-$sayto_max = 128;
+$cfg{sayto_max} = 128;
 # 1 week before cleanup
-$sayto_keep_time = 604800;
+$cfg{sayto_keep_time} = 604800;
 #
 ### USER VARIABLES SECTION END   #############################################

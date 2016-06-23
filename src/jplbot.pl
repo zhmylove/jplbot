@@ -10,38 +10,41 @@ use Net::Jabber::Bot;
 use Storable;
 use LWP;
 
+my $config_file = './config.pl';
+our %cfg;
+
+unless (my $rc = do $config_file) {
+   warn "couldn't parse $config_file: $@" if $@;
+   warn "couldn't do $config_file: $!" unless defined $rc;
+   warn "couldn't run $config_file" unless $rc;
+}
+
 # DEFAULT VALUES. don't change them here
 # see comments in the 'config.pl'
-our $name = 'AimBot';
-our $karmafile = '/tmp/karma';
-our $saytofile = '/tmp/sayto';
-our $sayto_keep_time = 604800;
-our $sayto_max = 128;
-our $server = 'zhmylove.ru';
-our $port = 5222;
-our $username = 'aimbot';
-our $password = 'password';
-our $max_messages_per_hour = 7200;
-our $loop_sleep_time = 60;
-our $conference_server = 'conference.jabber.ru';
-our %room_passwords = ('ubuntulinux' => 'ubuntu');
-our $last_like_max = 3;
-our $tome_file = './tome.txt';
-our $tome_max = 300;
-our $tome_msg_max = 300;
-our $colors_minimum = 3;
-our @colors = (
+my $name      = $cfg{name}         // 'AimBot';
+my $karmafile = $cfg{karmafile}    // '/tmp/karma';
+my $saytofile = $cfg{saytofile}    // '/tmp/sayto';
+my $sayto_keep_time = $cfg{sayto_keep_time}             // 604800;
+my $sayto_max = $cfg{sayto_max}    // 128;
+my $server    = $cfg{server}       // 'zhmylove.ru';
+my $port      = $cfg{port}         // 5222;
+my $username  = $cfg{username}     // 'aimbot';
+my $password  = $cfg{password}     // 'password';
+my $max_messages_per_hour = $cfg{max_messages_per_hour} // 7200;
+my $loop_sleep_time    = $cfg{loop_sleep_time}          // 60;
+my $conference_server  = $cfg{conference_server} // 'conference.jabber.ru';
+my %room_passwords     = %{$cfg{room_passwords} // {'ubuntulinux'=>'ubuntu'}};
+my $last_like_max      = $cfg{last_like_max}            // 3;
+my $tome_file          = $cfg{tome_file}                // './tome.txt';
+my $tome_max           = $cfg{tome_max}                 // 300;
+my $tome_msg_max       = $cfg{tome_msg_max}             // 300;
+my $colors_minimum     = $cfg{colors_minimum}           // 3;
+my @colors             = @{ $cfg{colors}                // [
    'бело-оранжевый', 'оранжевый',
    'бело-зелёный', 'зелёный',
    'бело-синий', 'синий',
    'бело-коричневый', 'коричневый',
-);
-
-unless (my $ret = do './config.pl') {
-   warn "couldn't parse config.pl: $@" if $@;
-   warn "couldn't do config.pl: $!" unless defined $ret;
-   warn "couldn't run config.pl" unless $ret;
-}
+]};
 
 store {}, $karmafile unless -r $karmafile;
 store {}, $saytofile unless -r $saytofile;
