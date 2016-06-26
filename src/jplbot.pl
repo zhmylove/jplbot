@@ -10,6 +10,8 @@ use Net::Jabber::Bot;
 use Storable;
 use LWP;
 
+use tome;
+
 my $config_file = './config.pl';
 our %cfg;
 
@@ -24,6 +26,7 @@ unless (my $rc = do $config_file) {
 my $name      = $cfg{name}         // 'AimBot';
 my $karmafile = $cfg{karmafile}    // '/tmp/karma';
 my $saytofile = $cfg{saytofile}    // '/tmp/sayto';
+my $tome_file = $cfg{tome_file}    // '/tmp/tome.txt';
 my $sayto_keep_time = $cfg{sayto_keep_time}             // 604800;
 my $sayto_max = $cfg{sayto_max}    // 128;
 my $server    = $cfg{server}       // 'zhmylove.ru';
@@ -37,9 +40,6 @@ my %room_passwords     = %{ $cfg{room_passwords} // {
    'ubuntulinux' => 'ubuntu'
 }};
 my $last_like_max      = $cfg{last_like_max}            // 3;
-my $tome_file          = $cfg{tome_file}                // '/tmp/tome.txt';
-my $tome_max           = $cfg{tome_max}                 // 300;
-my $tome_msg_max       = $cfg{tome_msg_max}             // 300;
 my $colors_minimum     = $cfg{colors_minimum}           // 3;
 my @colors             = @{ $cfg{colors}                // [
    'бело-оранжевый', 'оранжевый',
@@ -54,6 +54,8 @@ my %karma = %{retrieve($karmafile)};
 my %sayto = %{retrieve($saytofile)};
 say "Karma records: " . keys %karma if scalar keys %karma;
 say "Sayto records: " . keys %sayto if scalar keys %sayto;
+my $tome = tome->new($config_file);
+$tome->read_tome_file($tome_file);
 
 my %jid_DB = ();
 my %bomb_time;
@@ -61,7 +63,6 @@ my %bomb_correct;
 my %bomb_resourse;
 my %bomb_nick;
 my %bomb_jid;
-my %tome;
 my $last_bomb_time = 0;
 my %last_like;
 my $col_count = int($colors_minimum + ($#colors - $colors_minimum + 1) * rand);
@@ -69,13 +70,6 @@ my %col_hash;
 my %room_list;
 $col_hash{lc($_)} = 1 for @colors;
 $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
-
-if (-r $tome_file) {
-   open my $tome_fh, "<:utf8", $tome_file or warn "Can't open $tome_file!";
-   chomp, $tome{$_} = 1 while (<$tome_fh>);
-   close $tome_fh;
-   say "Tome records: " . keys %tome if scalar keys %tome;
-}
 
 my $start_time = time;
 my $qname = quotemeta($name);
@@ -103,8 +97,7 @@ sub save_data {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
 
-   open my $tome_fh, ">:utf8", $tome_file or warn "Can't open $tome_file!";
-   say $tome_fh join "\n", keys %tome and say "Tome saved to: $tome_file";
+   $tome->save_tome_file();
 }
 
 sub get_jid {
@@ -233,20 +226,13 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-
    if ($msg{'body'} =~ s{^$qname: }{}) {
-      my $rndkey = (keys %tome)[rand keys %tome];
+      my $rndkey = $tome->message($msg{'body'});
 
       $bot->SendGroupMessage($msg{'reply_to'},
          # you require more random values
          "$src: $rndkey"
       ) if ($rndkey);
-
-      if ($msg{'body'} =~ m{[^\s\n]}) {
-         my $txt = (split '\n', $msg{'body'})[0];
-         delete $tome{ $rndkey } if (keys %tome >= $tome_max);
-         $tome{$txt} = substr $txt, 0, $tome_msg_max;
-      }
 
       return;
    }
