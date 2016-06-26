@@ -33,9 +33,11 @@ my $password  = $cfg{password}     // 'password';
 my $max_messages_per_hour = $cfg{max_messages_per_hour} // 7200;
 my $loop_sleep_time    = $cfg{loop_sleep_time}          // 60;
 my $conference_server  = $cfg{conference_server} // 'conference.jabber.ru';
-my %room_passwords     = %{$cfg{room_passwords} // {'ubuntulinux'=>'ubuntu'}};
+my %room_passwords     = %{ $cfg{room_passwords} // {
+   'ubuntulinux' => 'ubuntu'
+}};
 my $last_like_max      = $cfg{last_like_max}            // 3;
-my $tome_file          = $cfg{tome_file}                // './tome.txt';
+my $tome_file          = $cfg{tome_file}                // '/tmp/tome.txt';
 my $tome_max           = $cfg{tome_max}                 // 300;
 my $tome_msg_max       = $cfg{tome_msg_max}             // 300;
 my $colors_minimum     = $cfg{colors_minimum}           // 3;
