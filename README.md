@@ -24,9 +24,16 @@ Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
 
 ## Dependencies
+* cpan LWP::Protocol::https
+
+#### XMPP
 * cpan Net::Jabber
 * cpan Net::Jabber::Bot
-* cpan LWP::Protocol::https
+
+#### Telegram
+* cpan Test::Without::Module
+* cpan JSON::MaybeXS
+* cpan WWW::Telegram::BotAPI
 
 ## Files
 * src/jplbot.pl                        -- main executable file.
