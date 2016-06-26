@@ -1,10 +1,12 @@
 #!/usr/local/bin/perl
 # made by: KorG
+
 use strict;
 use v5.18;
-use utf8;
 use warnings;
 no warnings 'experimental';
+use utf8;
+binmode STDOUT, ':utf8';
 
 use Net::Jabber::Bot;
 use Storable;
@@ -83,7 +85,6 @@ $SIG{'INT'} = \&shutdown;
 $SIG{'TERM'} = \&shutdown;
 $SIG{'USR1'} = \&debug;
 $SIG{'USR2'} = \&save_data;
-binmode STDOUT, ':utf8';
 srand;
 
 sub debug {

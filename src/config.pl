@@ -32,8 +32,9 @@ $cfg{room_passwords} = {'ubuntulinux' => 'ubuntu'};
 # Number of distinct likes allowed per user
 $cfg{last_like_max} = 3;
 
-# File used for bot addressed messages
+# Files used for bot addressed messages
 $cfg{tome_file} = '/tmp/tome.txt';
+$cfg{tome_tg_file} = '/tmp/tome_tg.txt';
 # Maximum number of bot addressed messages per user
 $cfg{tome_max} = 300;
 # Maximum message length

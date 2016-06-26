@@ -15,6 +15,7 @@ my $tome_max      = 300;
 my $tome_msg_max  = 300;
 
 my %tome;
+srand;
 
 # arg: self cfg_file
 sub new($$$) {
