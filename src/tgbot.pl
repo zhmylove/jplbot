@@ -24,6 +24,7 @@ unless (my $rc = do $config_file) {
 # DEFAULT VALUES. don't change them here
 # see comments in the 'config.pl'
 my $name          = $cfg{name}            // 'AimBot';
+my $tg_name       = $cfg{tg_name}         // '@korg_bot';
 my $token         = $cfg{token}           // 'token';
 my $tome_tg_file  = $cfg{tome_tg_file}    // '/tmp/tome_tg.txt';
 
@@ -73,7 +74,11 @@ for(;;) {
       }
 
       next unless (my $text = $upd->{message}{text});
-      if ($text =~ s/^$name:\s*// || $process) {
+      if (
+         $text =~ s/^$name(?:[,:])\s*// ||
+         $text =~ s/^$tg_name(?:[,:])?\s*// ||
+         $process
+      ) {
          $tg->sendMessage({
                chat_id => $upd->{message}{chat}{id},
                reply_to_message_id => $upd->{message}{message_id},
