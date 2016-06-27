@@ -423,10 +423,17 @@ sub new_bot_message {
                   my $length = $response->header('Content-Length') // -1;
                   $length = -1 unless $length > 0;
 
-                  while ($length =~ s/(?<=\d)(?=\d{3}\b)/ /){}
+                  my @units = ( 'байт', 'КиБ', 'МиБ', 'ГиБ', 'ТиБ' );
+                  my $measure = 0;
+                  while ($length > 1024) {
+                     $length /= 1024;
+                     $measure++;
+                  }
+
+                  $length = int($length + 0.5);
 
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$src: Content-Length: $length байт.");
+                     "$src: Content-Length: $length $units[$measure].");
 
                   $dead = 1;
                   return;
