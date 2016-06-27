@@ -13,6 +13,7 @@ use Storable;
 use LWP;
 
 use tome;
+use keywords;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -251,39 +252,12 @@ sub new_bot_message {
       return;
    }
 
+   my ($keyword, $reply) = keywords->parse($src, $msg{'body'});
+   $bot->SendGroupMessage($msg{'reply_to'}, $reply), return if $keyword;
+
    PARSE_MESSAGE: # for google://
 
    given ($msg{'body'}) {
-
-      when (/^(?:date|дата)\s*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: " . localtime);
-      }
-
-      when (/^(?:time|время)\s*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: " . time);
-      }
-
-      when (/emacs/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "use vim or die;") if int(2*rand);
-      }
-
-      when (/sudo/) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "sudo нинужно >_<") if int(2*rand);
-      }
-
-      when (/(?:ubunt|убунт)/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "убунта нинужна >_<") if int(2*rand);
-      }
-
-      when (/(?:perl|перл)/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "папа ^_^") if int(2*rand);
-      }
 
       when (/^(?:top|топ)\s*(\d*)\s*$/i) {
          my $top;
@@ -471,35 +445,6 @@ sub new_bot_message {
             });
 
          my $response = $ua->get($uri);
-      }
-
-      when (m{(^\S+?: |\s|^)(?:man|ман|[mм]):/?/?(\S+)}i) {
-         return unless defined $2;
-
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$1https://www.freebsd.org/cgi/man.cgi?query=$2");
-      }
-
-      when (/^(?:(?:добро|все|ребя)\w*)*\s*утр/i || /^утр\w*\s*[.!]*\s*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: и тебе доброе утро!");
-      }
-
-      when (/^ку[\s!]*\b/i || /^(?:всем\s*)?приве\w*[.\s!]*$/i ||
-         /^здаро\w*\s*/) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "Привет, привет!");
-      }
-
-      when (/^пыщь?(?:-пыщь?)?[.\s!]*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: пыщь-пыщь, ололо, я -- водитель НЛО!");
-      }
-
-      when (/^(?:доброй|спокойной|всем)?\s*ночи[.\s!]*$/i ||
-         /^[\w.,\s]*[шс]пать[.\s!]*$/i) {
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "Сладких снов!");
       }
 
       when (sub{return $col_hash{lc($_)} || 0}) {
