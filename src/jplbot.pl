@@ -252,7 +252,8 @@ sub new_bot_message {
       return;
    }
 
-   my ($keyword, $reply) = keywords->parse($src, $msg{'body'});
+   my ($keyword, $personal, $reply) = keywords->parse($msg{'body'});
+   $reply = "$src: " . $reply if $personal;
    $bot->SendGroupMessage($msg{'reply_to'}, $reply), return if $keyword;
 
    PARSE_MESSAGE: # for google://

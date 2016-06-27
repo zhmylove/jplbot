@@ -11,6 +11,7 @@ binmode STDOUT, ':utf8';
 use WWW::Telegram::BotAPI;
 
 use tome;
+use keywords;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -74,6 +75,7 @@ for(;;) {
       }
 
       next unless (my $text = $upd->{message}{text});
+
       if (
          $text =~ s/^$name(?:[,:])\s*// ||
          $text =~ s/^$tg_name(?:[,:])?\s*// ||
@@ -84,6 +86,23 @@ for(;;) {
                reply_to_message_id => $upd->{message}{message_id},
                text => $tome->message($text)
             });
+
+         next;
+      }
+
+      my ($keyword, $personal, $reply) = keywords->parse($text);
+      if ($keyword) {
+         my @reply_to_message_id = (
+            reply_to_message_id => $upd->{message}{message_id}
+         ) if $personal;
+
+         $tg->sendMessage({
+               chat_id => $upd->{message}{chat}{id},
+               @reply_to_message_id,
+               text => $reply
+            });
+
+         next;
       }
    }
 }
