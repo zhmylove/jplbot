@@ -17,6 +17,8 @@ $cfg{username} = 'aimbot';
 $cfg{password} = 'password';
 # Token for Telegram
 $cfg{token} = 'token';
+# Username for Telegram
+$cfg{tg_name} = '@korg_bot';
 
 # Maximum number of messages per hour
 $cfg{max_messages_per_hour} = 150;
