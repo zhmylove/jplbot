@@ -69,12 +69,11 @@ for(;;) {
       $offset = $upd->{update_id} + 1 if $upd->{update_id} >= $offset;
       my $process = 0;
 
-      if (defined $upd->{message}{reply_to_message}) {
-         next if $upd->{message}{reply_to_message}{from}{first_name} ne $name;
-         $process = 1;
-      }
-
       next unless (my $text = $upd->{message}{text});
+
+      $process = 1 if (defined $upd->{message}{reply_to_message} &&
+         $upd->{message}{reply_to_message}{from}{first_name} eq $name
+      );
 
       if (
          $text =~ s/^$name(?:[,:])\s*// ||
