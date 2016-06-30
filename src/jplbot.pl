@@ -30,6 +30,7 @@ my $name      = $cfg{name}         // 'AimBot';
 my $karmafile = $cfg{karmafile}    // '/tmp/karma';
 my $saytofile = $cfg{saytofile}    // '/tmp/sayto';
 my $tome_file = $cfg{tome_file}    // '/tmp/tome.txt';
+my $kick_file = $cfg{kick_file}    // '/tmp/kick';
 my $sayto_keep_time = $cfg{sayto_keep_time}             // 604800;
 my $sayto_max = $cfg{sayto_max}    // 128;
 my $server    = $cfg{server}       // 'zhmylove.ru';
@@ -53,10 +54,13 @@ my @colors             = @{ $cfg{colors}                // [
 
 store {}, $karmafile unless -r $karmafile;
 store {}, $saytofile unless -r $saytofile;
+store {zhmylove => 1}, $kick_file unless -r $kick_file;
 my %karma = %{retrieve($karmafile)};
 my %sayto = %{retrieve($saytofile)};
+my %kicks = %{retrieve($kick_file)};
 say "Karma records: " . keys %karma if scalar keys %karma;
 say "Sayto records: " . keys %sayto if scalar keys %sayto;
+say "Kicker admins: " . keys %kicks if scalar keys %kicks;
 my $tome = tome->new($config_file);
 $tome->read_tome_file($tome_file);
 
@@ -98,6 +102,7 @@ sub debug {
 sub save_data {
    store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
+   store \%kicks, $kick_file and say "Kicks saved to: $kick_file";
 
    $tome->save_tome_file();
 }
@@ -311,6 +316,13 @@ sub new_bot_message {
       when (/^(?:bomb|бомба)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
             "$src: бомба -- это не игрушки!");
+      }
+
+      when (/^list-kickers?$/i) {
+         return unless defined $kicks{lc($src)};
+
+         $bot->SendGroupMessage($msg{'reply_to'},
+            "$src: " . join ", ", keys %kicks);
       }
 
       when (m{^sayto[^/]*/([^/]*?)$rb?/(.*)$}s) {
@@ -568,6 +580,48 @@ sub new_bot_message {
                      $karma{lc($nick)}--;
                      $bot->SendGroupMessage($msg{'reply_to'},
                         "$src: опустил карму $nick до " . $karma{lc($nick)});
+                  }
+
+                  when (/^remove[- ]kicker$rb+?($qnick)$/i) {
+                     return unless defined $kicks{lc($nick)};
+                     return unless defined $kicks{lc($src)};
+                     return if $src eq $nick;
+
+                     delete $kicks{lc($nick)};
+
+                     $bot->SendGroupMessage($msg{'reply_to'},
+                        "$nick: все мы падали в первый раз.");
+
+                     return;
+                  }
+
+                  when (/^add[- ]kicker$rb+?($qnick)$/i) {
+                     return unless defined $kicks{lc($src)};
+
+                     $kicks{lc($nick)} = 1;
+
+                     $bot->SendGroupMessage($msg{'reply_to'},
+                        "$nick: отлично подходит для прочистки двигателя.");
+
+                     return;
+                  }
+
+                  when (/^kick$rb+?($qnick)[:\s]*?$/i) {
+                     if (
+                        $nick eq $name ||
+                        ! defined $kicks{lc($src)}
+                     ) {
+                        $bot->SendGroupMessage($msg{'reply_to'},
+                           "$src: знать путь и пройти его -- не одно и то же."
+                        );
+
+                        return;
+                     }
+
+                     $bot->SendGroupMessage($msg{'reply_to'},
+                        "$nick: предупредительный выстрел в голову.");
+
+                     return give_role($bot, $resource, $nick, 'none');
                   }
                }
 

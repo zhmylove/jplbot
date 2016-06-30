@@ -1,12 +1,12 @@
 # jplbot
-Simple jabber bot written in perl by KorG.
-The command list follows:
+Simple jabber and telegram bot written in perl by KorG.
+The full command list follows:
 * time           -- show time.
 * date           -- show date & time.
 * help           -- show help message.
 * karma [user]   -- show specified user's karma (yours by default).
 * top [number]   -- show karma top
-* bomb [user]    -- put a bomb on the user or taunt unless argument passed.
+* bomb {user}    -- put a bomb on the user or taunt unless argument passed.
 * user: ++       -- increment or decrement specified user's karma.
 * user: +1
 * user: -1
@@ -15,8 +15,13 @@ The command list follows:
 * http://uri     -- show information about first found URI.
 * man://page     -- show link to the manpage on freebsd.org.
 * m:page
+* man page
 * g:txt          -- transform txt into link and show the title
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
+* add-kicker     -- grant the user kicker privileges.
+* remove-kicker  -- remove the user from the list.
+* list-kickers   -- list users with kick privileges.
+* kick {user}    -- kick the user if you have respective rights.
 
 To request voice, just send a private message to bot with body: "voice".
 
@@ -36,8 +41,11 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * cpan WWW::Telegram::BotAPI
 
 ## Files
-* src/jplbot.pl                        -- main executable file.
+* src/jplbot.pl                        -- main executable file for Jabber.
+* src/tgbot.pl                         -- main executable file for Telegram.
 * src/config.pl                        -- configuration file included when needed.
+* src/keywords.pm                      -- keywords module.
+* src/tome.pm                          -- ToMe module.
 * patch/Net/Jabber/Bot.pm.patch        -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
 * rc.d/jplbot                          -- rc(8) script for FreeBSD
 

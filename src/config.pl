@@ -6,6 +6,9 @@ $cfg{name} = 'AimBot';
 # Path to file for karma saving routine
 $cfg{karmafile} = '/tmp/karma';
 
+# Path to file for kicker admins
+$cfg{kick_file} = '/tmp/kick';
+
 # Address of XMPP server of the bot's account
 $cfg{server} = 'zhmylove.ru';
 # Port of XMPP server of the bot's account
