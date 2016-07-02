@@ -404,9 +404,9 @@ sub new_bot_message {
                   }
                }
 
-               if ($type{'image'}) {
-                  return if $response->code >= 300;
+               $type{'err'}++, return if $response->code >= 300;
 
+               if ($type{'image'}) {
                   my $length = $response->header('Content-Length') // -1;
                   $length = -1 unless $length > 0;
 
@@ -432,7 +432,9 @@ sub new_bot_message {
 
                return if $dead;
 
-               if ($type{'image'}) {
+               if ($type{'err'}) {
+                  # do nothing in case of any errors
+               } elsif ($type{'image'}) {
                   # do nothing for all other chunks of response
                } elsif ($type{'html'}) {
                   my $content = $response->decoded_content // '';
@@ -457,7 +459,12 @@ sub new_bot_message {
                }
             });
 
+         local $SIG{'ALRM'} = sub { die "Timeout" };
+         alarm 10;
+
          my $response = $ua->get($uri);
+
+         alarm 0;
       }
 
       when (sub{return $col_hash{lc($_)} || 0}) {
