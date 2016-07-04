@@ -33,8 +33,13 @@ sub parse($$) {
          return (1, 0, "use vim or die;") if int(2*rand);
       }
 
-      when (/sudo/) {
-         return (1, 0, "sudo нинужно >_<") if int(2*rand);
+      when (/sudo(?:\s+(\S+))?/i) {
+
+         return (1, 0, "Слабо без sudo?") if (! defined $1 && int(1.25*rand));
+         local $_ = $1 // "sudo";
+         return (1, 0, "$_ для школоты >_<") if int(1.33*rand);
+         return (1, 0, "$_ для слабых!") if int(1.5*rand);
+         return (1, 0, "$_ нинужно >_<") if int(2*rand);
       }
 
       when (/(?:ubunt|убунт)/i) {
