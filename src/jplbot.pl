@@ -233,7 +233,7 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-   if ($msg{'body'} =~ s{^(?:$qname: |[бb](от|ot)?)}{}i) {
+   if ($msg{'body'} =~ s{^(?:$qname: |[бb](от|ot)?$)}{}i) {
       my $rndkey = $tome->message($msg{'body'});
 
       $bot->SendGroupMessage($msg{'reply_to'},
