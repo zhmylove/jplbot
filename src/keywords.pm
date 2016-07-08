@@ -52,7 +52,7 @@ sub parse($$) {
          return (1, 0, "папа ^_^") if int(2*rand);
       }
 
-      when (m{(^\S+?: |\s|\b|^)(?:man|ман|[mм])[: ]/?/?([a-z0-9-._]+)}i) {
+      when (m{(^\S+?[:,] |\s|^)(?:man|ман|[mм])[: ]/?/?([a-z0-9-._]+)}i) {
          return (0, undef) unless defined $2;
 
          return (1, 0, "$1https://www.freebsd.org/cgi/man.cgi?query=$2");
