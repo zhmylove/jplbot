@@ -233,7 +233,7 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-   if ($msg{'body'} =~ s{^$qname: }{}) {
+   if ($msg{'body'} =~ s{^(?:$qname: |[бb](от|ot)?)}{}i) {
       my $rndkey = $tome->message($msg{'body'});
 
       $bot->SendGroupMessage($msg{'reply_to'},
@@ -298,14 +298,6 @@ sub new_bot_message {
             "Это совершенно бесплатно.\n" .
             "Чмоки ;-)"
          );
-      }
-
-      when (/^(?:fortune|ф)\s*$/i) {
-         my $fortune = `/usr/games/fortune -s`;
-         chomp $fortune;
-         $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: $fortune");
-         sleep 1;
       }
 
       when (/^(?:karma|карма)\s*$/i) {

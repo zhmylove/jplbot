@@ -76,8 +76,9 @@ for(;;) {
       );
 
       if (
-         $text =~ s/^$name(?:[,:])\s*// ||
-         $text =~ s/^$tg_name(?:[,:])?\s*// ||
+         $text =~ s/^[бb](от|ot)?$//i ||
+         $text =~ s/^$name(?:[,:])\s*//i ||
+         $text =~ s/^$tg_name(?:[,:])?\s*//i ||
          $process
       ) {
          $tg->sendMessage({

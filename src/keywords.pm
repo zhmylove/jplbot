@@ -10,6 +10,8 @@ binmode STDOUT, ':utf8';
 
 package keywords;
 
+my $fortune_time = 0;
+
 # arg: self txt
 # ret: keyword personal reply
 sub parse($$) {
@@ -78,6 +80,15 @@ sub parse($$) {
          /^[\w.,\s]*[шс]пать[.\s!]*$/i) {
 
          return (1, 0, "Сладких снов!");
+      }
+
+      when (/^(?:fortune|ф)\s*$/i) {
+         return (0, 0, undef) if (time - $fortune_time < 2);
+         $fortune_time = time;
+
+         chomp (my $fortune = `/usr/games/fortune -s`);
+
+         return (1, 1, $fortune);
       }
 
    }
