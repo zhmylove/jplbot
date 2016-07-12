@@ -5,6 +5,8 @@ $cfg{name} = 'AimBot';
 
 # Path to file for karma saving routine
 $cfg{karmafile} = '/tmp/karma';
+# Time between same src->dst karma change allowed
+$cfg{karma_reject_time} = 7;
 
 # Path to file for kicker admins
 $cfg{kick_file} = '/tmp/kick';

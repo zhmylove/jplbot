@@ -22,7 +22,7 @@ sub new($$$) {
    my $self = shift;
    my $config_file = shift // die 'No tome config specified';
 
-   my %cfg;
+   our %cfg;
 
    unless (my $rc = do $config_file) {
       warn "couldn't parse $config_file: $@" if $@;
@@ -49,6 +49,7 @@ sub read_tome_file($$) {
    }
 }
 
+# arg: self
 sub save_tome_file {
    die 'No tome.txt file specified' unless defined $tome_file;
 

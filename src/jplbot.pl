@@ -14,6 +14,7 @@ use LWP;
 
 use tome;
 use keywords;
+use karma;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -27,7 +28,6 @@ unless (my $rc = do $config_file) {
 # DEFAULT VALUES. don't change them here
 # see comments in the 'config.pl'
 my $name      = $cfg{name}         // 'AimBot';
-my $karmafile = $cfg{karmafile}    // '/tmp/karma';
 my $saytofile = $cfg{saytofile}    // '/tmp/sayto';
 my $tome_file = $cfg{tome_file}    // '/tmp/tome.txt';
 my $kick_file = $cfg{kick_file}    // '/tmp/kick';
@@ -43,7 +43,6 @@ my $conference_server  = $cfg{conference_server} // 'conference.jabber.ru';
 my %room_passwords     = %{ $cfg{room_passwords} // {
    'ubuntulinux' => 'ubuntu'
 }};
-my $last_like_max      = $cfg{last_like_max}            // 3;
 my $colors_minimum     = $cfg{colors_minimum}           // 3;
 my @colors             = @{ $cfg{colors}                // [
    'бело-оранжевый', 'оранжевый',
@@ -52,15 +51,13 @@ my @colors             = @{ $cfg{colors}                // [
    'бело-коричневый', 'коричневый',
 ]};
 
-store {}, $karmafile unless -r $karmafile;
 store {}, $saytofile unless -r $saytofile;
 store {zhmylove => 1}, $kick_file unless -r $kick_file;
-my %karma = %{retrieve($karmafile)};
 my %sayto = %{retrieve($saytofile)};
 my %kicks = %{retrieve($kick_file)};
-say "Karma records: " . keys %karma if scalar keys %karma;
 say "Sayto records: " . keys %sayto if scalar keys %sayto;
 say "Kicker admins: " . keys %kicks if scalar keys %kicks;
+my $karma = karma->new($config_file);
 my $tome = tome->new($config_file);
 $tome->read_tome_file($tome_file);
 
@@ -71,7 +68,6 @@ my %bomb_resourse;
 my %bomb_nick;
 my %bomb_jid;
 my $last_bomb_time = 0;
-my %last_like;
 my $col_count = int($colors_minimum + ($#colors - $colors_minimum + 1) * rand);
 my %col_hash;
 my %room_list;
@@ -100,11 +96,11 @@ sub debug {
 }
 
 sub save_data {
-   store \%karma, $karmafile and say "Karma saved to: $karmafile";
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
    store \%kicks, $kick_file and say "Kicks saved to: $kick_file";
 
    $tome->save_tome_file();
+   $karma->save_karma_file();
 }
 
 sub get_jid {
@@ -137,29 +133,6 @@ sub say_to {
 
       delete $sayto{$room}->{$dst} unless scalar keys $sayto{$room}->{$dst};
    }
-}
-
-sub allowed_like {
-   my ($src, $dst) = @_;
-   return 0 unless defined $dst;
-
-   if (exists $last_like{$src}) {
-      if (exists $last_like{$src}->{$dst}) {
-         return 0;
-      } else {
-         if ($last_like_max <= keys $last_like{$src}) {
-            return 0;
-         } else {
-            $last_like{$src}->{$dst} = 1;
-            return 1;
-         }
-      }
-   } else {
-      $last_like{$src}->{$dst} = 1;
-      return 1;
-   }
-
-   return 0; # just because
 }
 
 sub give_role {
@@ -201,7 +174,6 @@ sub bomb_user {
 
 sub background_checks {
    my $bot = shift;
-   store \%karma, $karmafile;
 
    foreach(keys %bomb_time){
       bomb_user($bot, $_) if (time >
@@ -219,8 +191,6 @@ sub background_checks {
          delete $sayto{$room}->{$dst} unless scalar keys $sayto{$room}->{$dst};
       }
    }
-
-   undef %last_like;
 }
 
 sub new_bot_message {
@@ -266,17 +236,8 @@ sub new_bot_message {
    given ($msg{'body'}) {
 
       when (/^(?:top|топ)\s*(\d*)\s*$/i) {
-         my $top;
-         my $topN = $1;
-
-         $topN = 10 if $topN eq "" || $topN < 1 || $topN > 25;
-
-         $top .= "$_($karma{$_}), " for (
-            sort {$karma{$b} <=> $karma{$a}} keys %karma
-         )[0..$topN-1];
-         $top =~ s/, $//;
-
-         $bot->SendGroupMessage($msg{'reply_to'}, $top);
+         $bot->SendGroupMessage($msg{'reply_to'},
+            $karma->get_top($1));
       }
 
       when (/^help\s*$/i) {
@@ -302,7 +263,7 @@ sub new_bot_message {
 
       when (/^(?:karma|карма)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: твоя карма: " . ($karma{lc($src)}||0));
+            "$src: " . $karma->get_karma($src));
       }
 
       when (/^(?:bomb|бомба)\s*$/i) {
@@ -487,7 +448,7 @@ sub new_bot_message {
 
                   when (/^(?:karma|карма)$rb*?$qnick\s*?$/i) {
                      $bot->SendGroupMessage($msg{'reply_to'},
-                        "$src: карма $nick " . ($karma{lc($nick)}||0));
+                        "$src: " . $karma->get_karma($src, $nick));
                   }
 
                   when (/^(?:bomb|бомба)$rb*?$qnick\s*?$/i) {
@@ -552,33 +513,13 @@ sub new_bot_message {
                   }
 
                   when (/^($qnick):?\s*\+[+1]+\s*$/) {
-                     return if $nick eq $src;
-
-                     unless (allowed_like lc($src), lc($nick)) {
-                        $bot->SendGroupMessage($msg{'reply_to'},
-                           "$src: нельзя изменять карму так часто!");
-
-                        return;
-                     }
-
-                     $karma{lc($nick)}++;
-                     $bot->SendGroupMessage($msg{'reply_to'},
-                        "$src: поднял карму $nick до " . $karma{lc($nick)});
+                     $bot->SendGroupMessage($msg{'reply_to'}, 
+                        "$src: " . $karma->inc_karma($src, $nick));
                   }
 
                   when (/^($qnick):?\s*\-[-1]+\s*$/) {
-                     return if $nick eq $src;
-
-                     unless (allowed_like lc($src), lc($nick)) {
-                        $bot->SendGroupMessage($msg{'reply_to'},
-                           "$src: нельзя изменять карму так часто!");
-
-                        return;
-                     }
-
-                     $karma{lc($nick)}--;
-                     $bot->SendGroupMessage($msg{'reply_to'},
-                        "$src: опустил карму $nick до " . $karma{lc($nick)});
+                     $bot->SendGroupMessage($msg{'reply_to'}, 
+                        "$src: " . $karma->dec_karma($src, $nick));
                   }
 
                   when (/^remove[- ]kicker$rb+?($qnick)$/i) {
