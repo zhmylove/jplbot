@@ -20,10 +20,11 @@ my %last_like;
 
 my $initialized   = 0;
 
-# arg: self cfg_file
-sub new($$) {
+# arg: self cfg_file karma_file
+sub new($$;$) {
    my $self = shift;
    my $config_file = shift // die 'No karma config specified';
+   my $arg_file = shift;
 
    our %cfg;
 
@@ -34,6 +35,7 @@ sub new($$) {
    }
 
    $karmafile     = $cfg{karmafile} if defined $cfg{karmafile};
+   $karmafile     = $arg_file if defined $arg_file;
    $last_like_max = $cfg{last_like_max} if defined $cfg{last_like_max};
    $reject_time   = $cfg{karma_reject_time} if defined $cfg{karma_reject_time};
 
@@ -54,11 +56,12 @@ sub save_karma_file($) {
 
 # arg: self top_count
 sub get_top($$) {
-   my $top;
+   my $top = '';
    my $self = shift;
 
    my $topN = shift // 10;
    $topN = 10 if $topN eq "" || $topN < 1 || $topN > 25;
+   $topN = keys %karma if $topN > keys %karma;
 
    $top .= "$_($karma{$_}), " for (
       sort {$karma{$b} <=> $karma{$a}} keys %karma

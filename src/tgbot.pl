@@ -12,6 +12,7 @@ use WWW::Telegram::BotAPI;
 
 use tome;
 use keywords;
+use karma;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -28,12 +29,15 @@ my $name          = $cfg{name}            // 'AimBot';
 my $tg_name       = $cfg{tg_name}         // '@korg_bot';
 my $token         = $cfg{token}           // 'token';
 my $tome_tg_file  = $cfg{tome_tg_file}    // '/tmp/tome_tg.txt';
+my $karma_tg_file = $cfg{karma_tg_file}   // '/tmp/karma_tg';
 
 my $tg = WWW::Telegram::BotAPI->new(token=>$token);
 die "Name mismatch: $name" if $name ne $tg->getMe->{result}{first_name};
 
 my $tome = tome->new($config_file);
 $tome->read_tome_file($tome_tg_file);
+
+my $karma = karma->new($config_file, $karma_tg_file);
 
 my $start_time = time;
 my $offset  = 0;
@@ -46,6 +50,7 @@ srand;
 
 sub save_data {
    $tome->save_tome_file();
+   $karma->save_karma_file();
 }
 
 sub shutdown {
@@ -68,12 +73,30 @@ for(;;) {
    for my $upd (@{ $updates->{result} }) {
       $offset = $upd->{update_id} + 1 if $upd->{update_id} >= $offset;
       my $process = 0;
+      my $is_reply = 0;
+      my $repl_author = '';
 
       next unless (my $text = $upd->{message}{text});
 
-      $process = 1 if (defined $upd->{message}{reply_to_message} &&
-         $upd->{message}{reply_to_message}{from}{first_name} eq $name
+      my $src = join '=', (
+         $upd->{message}{from}{first_name},
+         $upd->{message}{from}{last_name} // '',
+         $upd->{message}{from}{username} // ''
       );
+
+      if (defined $upd->{message}{reply_to_message}) {
+         $is_reply = 1;
+
+         $process = 1 if (
+            $upd->{message}{reply_to_message}{from}{first_name} eq $name
+         );
+
+         $repl_author = join '=', (
+            $upd->{message}{reply_to_message}{from}{first_name},
+            $upd->{message}{reply_to_message}{from}{last_name} // '',
+            $upd->{message}{reply_to_message}{from}{username} // ''
+         );
+      }
 
       if (
          $text =~ s/^[бb](от|ot)?$//i ||
@@ -103,6 +126,58 @@ for(;;) {
             });
 
          next;
+      }
+
+      given ($text) {
+         when (/^(?:top|топ)\s*(\d*)\s*$/i) {
+            my $top = $karma->get_top($1) || 'Пустота...';
+
+            $top =~ s/=[^=\s,]*?([()\s,])/$1/g;
+            $top =~ s/=/ /g;
+
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  text => $top
+               });
+         }
+
+         when (/^(?:karma|карма)\s*$/i) {
+            my $karma = $karma->get_karma($src);
+
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  reply_to_message_id => $upd->{message}{message_id},
+                  text => ucfirst($karma)
+               });
+         }
+
+         when (/^\s*+[+1]+\s*$/i) {
+            next unless $is_reply;
+
+            my $text = $karma->inc_karma($src, $repl_author);
+            $text =~ s/=[^=\s]*\s/ /;
+            $text =~ s/=/ /g;
+
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  reply_to_message_id => $upd->{message}{message_id},
+                  text => ucfirst($text)
+               });
+         }
+
+         when (/^\s*-[-1]+\s*$/i) {
+            next unless $is_reply;
+
+            my $text = $karma->dec_karma($src, $repl_author);
+            $text =~ s/=[^=\s]*\s/ /;
+            $text =~ s/=/ /g;
+
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  reply_to_message_id => $upd->{message}{message_id},
+                  text => ucfirst($text)
+               });
+         }
       }
    }
 }
