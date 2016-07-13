@@ -9,6 +9,7 @@ use utf8;
 binmode STDOUT, ':utf8';
 
 use WWW::Telegram::BotAPI;
+use Storable;
 
 use tome;
 use keywords;
@@ -30,6 +31,7 @@ my $tg_name       = $cfg{tg_name}         // '@korg_bot';
 my $token         = $cfg{token}           // 'token';
 my $tome_tg_file  = $cfg{tome_tg_file}    // '/tmp/tome_tg.txt';
 my $karma_tg_file = $cfg{karma_tg_file}   // '/tmp/karma_tg';
+my $tg_count_file = $cfg{tg_count_file}   // '/tmp/count_tg';
 
 my $tg = WWW::Telegram::BotAPI->new(token=>$token);
 die "Name mismatch: $name" if $name ne $tg->getMe->{result}{first_name};
@@ -43,6 +45,9 @@ my $start_time = time;
 my $offset  = 0;
 my $updates = 0;
 
+store {}, $tg_count_file unless -r $tg_count_file;
+my %chat_counter = %{retrieve($tg_count_file)};
+
 $SIG{'INT'} = \&shutdown;
 $SIG{'TERM'} = \&shutdown;
 $SIG{'USR2'} = \&save_data;
@@ -51,6 +56,9 @@ srand;
 sub save_data {
    $tome->save_tome_file();
    $karma->save_karma_file();
+
+   store \%chat_counter, $tg_count_file and
+   say "Counters saved to: $tg_count_file";
 }
 
 sub shutdown {
@@ -76,6 +84,13 @@ for(;;) {
       my $is_reply = 0;
       my $repl_author = '';
 
+      my $chat = join " ", (
+         $upd->{message}{chat}{type},
+         $upd->{message}{chat}{username} // '',
+         $upd->{message}{chat}{title} // ''
+      );
+      $chat_counter{$chat}++;
+
       next unless (my $text = $upd->{message}{text});
 
       my $src = join '=', (
@@ -97,6 +112,8 @@ for(;;) {
             $upd->{message}{reply_to_message}{from}{username} // ''
          );
       }
+
+      $text =~ s@^/(.*?)(?:$tg_name)?$@$1@i;
 
       if (
          $text =~ s/^[бb](от|ot)?$//i ||
@@ -151,11 +168,12 @@ for(;;) {
                });
          }
 
-         when (/^\s*+[+1]+\s*$/i) {
+         when (/^\s*\+[+1]+\s*$/i) {
             next unless $is_reply;
 
             my $text = $karma->inc_karma($src, $repl_author);
             $text =~ s/=[^=\s]*\s/ /;
+            $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
 
             $tg->sendMessage({
@@ -165,11 +183,12 @@ for(;;) {
                });
          }
 
-         when (/^\s*-[-1]+\s*$/i) {
+         when (/^\s*\-[-1]+\s*$/i) {
             next unless $is_reply;
 
             my $text = $karma->dec_karma($src, $repl_author);
             $text =~ s/=[^=\s]*\s/ /;
+            $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
 
             $tg->sendMessage({

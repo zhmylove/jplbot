@@ -46,8 +46,28 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * src/config.pl                        -- configuration file included when needed.
 * src/keywords.pm                      -- keywords module.
 * src/tome.pm                          -- ToMe module.
+* src/karma.pm                         -- karma module.
+* src/cat\_hash.pl                     -- utility to view saved hashes (karma, tg\_counters, kick, ...).
 * patch/Net/Jabber/Bot.pm.patch        -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
 * rc.d/jplbot                          -- rc(8) script for FreeBSD
+
+## cat\_hash.pl
+Well, some lists (karma, kick, ...) saved at the end of the work. You can simply view them using
+```sh
+$ ./cat_hash.pl /path/to/file
+$ ./cat_hash.pl # shows /tmp/count_tg by default
+```
+
+## Signals
+* INT       -- perform shutdown procedures.
+* TERM      -- perform shutdown procedures.
+* USR1      -- fall into debugger (*for jplbot started with -d parameter only*).
+* USR2      -- save dynamic data (karma, kick, ...).
+So if you want to save dynamic data more frequent, just tune-up your crontab:
+```
+15 * * * * /bin/pkill -USR2 -f jplbot.pl
+15 * * * * /bin/pkill -USR2 -f tgbot.pl
+```
 
 ## What if ...
 If you liked this bot, you can send me a postcard to [s@zhmylove.ru](mailto:s@zhmylove.ru) and star this project on the github.  

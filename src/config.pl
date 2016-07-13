@@ -11,6 +11,9 @@ $cfg{karma_reject_time} = 7;
 # Path to file for kicker admins
 $cfg{kick_file} = '/tmp/kick';
 
+# Path to file for Telegram message counters
+$cfg{tg_count_file} = '/tmp/count_tg';
+
 # Address of XMPP server of the bot's account
 $cfg{server} = 'zhmylove.ru';
 # Port of XMPP server of the bot's account
