@@ -81,11 +81,13 @@ sub allowed_like {
 
    # needs to be cleverer
    if (exists $last_like{$src}) {
-      if (defined $last_like{$src}->{$dst}) {
-         return 0 if (time - $last_like{$src}->{$dst} < $reject_time);
-         undef $last_like{$src}->{$dst};
+      for (keys %{ $last_like{$src} }) {
+         delete $last_like{$src}->{$_} if (
+            time - $last_like{$src}->{$_} > $reject_time
+         );
       }
-      if ($last_like_max <= keys $last_like{$src}) {
+
+      if ($last_like_max <= keys %{ $last_like{$src} }) {
          return 0;
       } else {
          $last_like{$src}->{$dst} = time;

@@ -85,13 +85,20 @@ for(;;) {
       my $repl_author = '';
 
       my $chat = join " ", (
-         $upd->{message}{chat}{type},
+         $upd->{message}{chat}{type} // '',
          $upd->{message}{chat}{username} // '',
          $upd->{message}{chat}{title} // ''
       );
       $chat_counter{$chat}++;
 
       next unless (my $text = $upd->{message}{text});
+
+      $tg->sendMessage({
+            chat_id => $upd->{message}{chat}{id},
+            text => $tome->message('')
+         }) unless ($chat_counter{$chat} % 256);
+
+      next if defined $upd->{message}{forward_date};
 
       my $src = join '=', (
          $upd->{message}{from}{first_name},
