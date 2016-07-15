@@ -64,7 +64,7 @@ sub message($$) {
 
    my $rndkey = (keys %tome)[rand keys %tome];
    
-   if ($txt =~ m{[^\s\n]}) {
+   if ($txt =~ m{[^\s\n+\d-]}) {
       my $txt = (split '\n', $txt)[0];
 
       delete $tome{ $rndkey } if (keys %tome >= $tome_max);
