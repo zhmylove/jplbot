@@ -44,6 +44,7 @@ my $karma = karma->new($config_file, $karma_tg_file);
 my $start_time = time;
 my $offset  = 0;
 my $updates = 0;
+my $starting = 1;
 
 store {}, $tg_count_file unless -r $tg_count_file;
 my %chat_counter = %{retrieve($tg_count_file)};
@@ -80,6 +81,12 @@ for(;;) {
 
    for my $upd (@{ $updates->{result} }) {
       $offset = $upd->{update_id} + 1 if $upd->{update_id} >= $offset;
+
+      if ($starting) {
+         $starting = 0 if (($upd->{message}{date} // 0) >= $start_time);
+         next;
+      }
+
       my $process = 0;
       my $is_reply = 0;
       my $repl_author = '';
