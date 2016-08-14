@@ -24,7 +24,12 @@ sub parse($$) {
 
    given ($txt) {
 
-      when (/^(?:date|дата)\s*$/i) {
+      when (/^(?:date|(?<ru>дата))\s*$/i) {
+
+         return (1, 1,
+            sprintf '%d.%5$02d.%6$d %d:%02d:%02d',
+            (localtime)[3,2,1,0], (localtime)[4] + 1, (localtime)[5] + 1900
+         ) if defined $+{ru};
 
          return (1, 1, "".localtime);
       }
