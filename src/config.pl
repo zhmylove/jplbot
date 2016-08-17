@@ -45,7 +45,7 @@ $cfg{last_like_max} = 3;
 # Files used for bot addressed messages
 $cfg{tome_file} = '/tmp/tome.txt';
 $cfg{tome_tg_file} = '/tmp/tome_tg.txt';
-# Maximum number of bot addressed messages per user
+# Maximum number of bot addressed messages per module instance
 $cfg{tome_max} = 300;
 # Maximum message length
 $cfg{tome_msg_max} = 300;
