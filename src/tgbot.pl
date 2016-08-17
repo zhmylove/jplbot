@@ -83,8 +83,8 @@ for(;;) {
       $offset = $upd->{update_id} + 1 if $upd->{update_id} >= $offset;
 
       if ($starting) {
-         $starting = 0 if (($upd->{message}{date} // 0) >= $start_time);
-         next;
+         next unless (($upd->{message}{date} // 0) >= $start_time);
+         $starting = 0;
       }
 
       my $process = 0;
