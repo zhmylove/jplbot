@@ -18,8 +18,8 @@ B<tome> -- parser of messages, sent "to me"
 
 B<tome> provides a simple mechanism for intercommunication with previously
 parsed messages.  The workflow of the module consists of initialization of
-the B<tome> subsystem and put new messages to internal database 
-contemporaneously with get a random messages from the history.
+the B<tome> subsystem and collection of new messages to an internal database 
+contemporaneously with retrieval a random messages from the history.
 
 =head1 DESCRIPTION
 
