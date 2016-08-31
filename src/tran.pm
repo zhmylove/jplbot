@@ -40,7 +40,7 @@ sub translate($$) {
    $ua->env_proxy;
 
    my $LANG = "en-ru";
-   $LANG = "ru-en" unless $TXT =~ /^[a-z0-9-_,?!.\s]*$/i;
+   $LANG = "ru-en" unless $TXT =~ /^[a-z0-9-_,?'!.\s]*$/i;
    utf8::encode($TXT);
 
    my $req = HTTP::Request->new(
