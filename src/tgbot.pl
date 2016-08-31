@@ -14,6 +14,7 @@ use Storable;
 use tome;
 use keywords;
 use karma;
+use tran;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -41,6 +42,8 @@ $tome->read_tome_file($tome_tg_file);
 
 my $karma = karma->new($config_file, $karma_tg_file);
 
+my $tran = tran->new();
+
 my $start_time = time;
 my $offset  = 0;
 my $updates = 0;
@@ -63,7 +66,7 @@ sub save_data {
 }
 
 sub shutdown {
-   save_data
+   save_data;
 
    say "Uptime: " . (time - $start_time);
 
@@ -204,6 +207,17 @@ for(;;) {
             $text =~ s/=[^=\s]*\s/ /;
             $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
+
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  reply_to_message_id => $upd->{message}{message_id},
+                  text => ucfirst($text)
+               });
+         }
+
+         when (/^!\s*(\S.*)/) {
+            my $text = $tran->translate($1);
+            next unless $text;
 
             $tg->sendMessage({
                   chat_id => $upd->{message}{chat}{id},

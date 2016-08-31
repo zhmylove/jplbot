@@ -15,6 +15,7 @@ use LWP;
 use tome;
 use keywords;
 use karma;
+use tran;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -59,6 +60,7 @@ say "Sayto records: " . keys %sayto if scalar keys %sayto;
 say "Kicker admins: " . keys %kicks if scalar keys %kicks;
 my $karma = karma->new($config_file);
 my $tome = tome->new($config_file);
+my $tran = tran->new();
 $tome->read_tome_file($tome_file);
 
 my %jid_DB = ();
@@ -112,7 +114,7 @@ sub get_jid {
 }
 
 sub shutdown {
-   save_data
+   save_data;
 
    say "Uptime: " . (time - $start_time);
 
@@ -313,6 +315,13 @@ sub new_bot_message {
 
          $bot->SendGroupMessage($msg{'reply_to'},
             "$src: замётано.");
+      }
+
+      when (/^!\s*(\S.*)/) {
+         my $text = $tran->translate($1);
+         return unless $text;
+
+         $bot->SendGroupMessage($msg{'reply_to'}, "$src: $text");
       }
 
       when (m{(?:^|\s)(?:google|[гg]):/?/?(\S+)}i) {
