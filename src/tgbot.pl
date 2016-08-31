@@ -133,11 +133,14 @@ for(;;) {
       $text =~ s@^/(.*?)(?:$tg_name)?$@$1@i;
 
       if (
-         $text =~ s/^[бb](от|ot)?$//i ||
+         $text =~ s/^[бb](от|ot)?(?:$|\s*[,?:!]\s*)//i ||
          $text =~ s/^$name(?:[,:])\s*//i ||
          $text =~ s/^$tg_name(?:[,:])?\s*//i ||
-         $process
+         $process ||
+         $text =~ s/[,\s](?<cleanup>бот|bot)(?:[,?:!\s]|$)//i
       ) {
+         $text = '' if $+{cleanup};
+
          $tg->sendMessage({
                chat_id => $upd->{message}{chat}{id},
                reply_to_message_id => $upd->{message}{message_id},
