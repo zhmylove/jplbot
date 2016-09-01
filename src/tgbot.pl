@@ -116,6 +116,8 @@ for(;;) {
          next;
       }
 
+      $lastmsg = $text;
+
       $tg->sendMessage({
             chat_id => $upd->{message}{chat}{id},
             text => $tome->message('')
