@@ -16,6 +16,7 @@ use tome;
 use keywords;
 use karma;
 use tran;
+use xlate;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -78,6 +79,7 @@ $room_list{$_} = [] for keys %room_passwords; # [] due to Bot.pm.patch
 
 my $start_time = time;
 my $qname = quotemeta($name);
+my $lastmsg = '';
 my $bot_address = "https://github.com/tune-it/jplbot"; # kinda copyleft
 my $rsymbols = "\x{20}\x{22}\x{26}\x{27}\x{2f}\x{3a}\x{3c}\x{3e}\x{40}";
 my $rb = "[$rsymbols]";
@@ -234,6 +236,18 @@ sub new_bot_message {
    $bot->SendGroupMessage($msg{'reply_to'}, $reply), return if $keyword;
 
    PARSE_MESSAGE: # for google://
+
+   # layout quickfick needs to have the highest priority
+   if ($msg{'body'} =~ /^!!\s*(.*)/) {
+      $lastmsg = $1 || $lastmsg;
+
+      $bot->SendGroupMessage($msg{'reply_to'},
+         xlate->cry($lastmsg) || return
+      );
+      return;
+   }
+
+   $lastmsg = $msg{'body'};
 
    given ($msg{'body'}) {
 

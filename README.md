@@ -19,6 +19,7 @@ The full command list follows:
 * g:txt          -- transform txt into link and show the title
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 * ! txt          -- translate txt from en-ru and vice versa.
+* !! [txt]       -- xlate layout en-ru and vice versa of the txt or the last message.
 * add-kicker     -- grant the user kicker privileges.
 * remove-kicker  -- remove the user from the list.
 * list-kickers   -- list users with kick privileges.
@@ -49,6 +50,7 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * src/tome.pm                          -- ToMe module.
 * src/karma.pm                         -- karma module.
 * src/tran.pm                          -- translate module.
+* src/xlate.pm                         -- layout translation module.
 * src/cat\_hash.pl                     -- utility to view saved hashes (karma, tg\_counters, kick, ...).
 * patch/Net/Jabber/Bot.pm.patch        -- patch for Net::Jabber::Bot to avoid some warnings, add password functionality and comment-out message parser to perform it manually.
 * rc.d/jplbot                          -- rc(8) script for FreeBSD

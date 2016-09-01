@@ -15,6 +15,7 @@ use tome;
 use keywords;
 use karma;
 use tran;
+use xlate;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -48,6 +49,7 @@ my $start_time = time;
 my $offset  = 0;
 my $updates = 0;
 my $starting = 1;
+my $lastmsg = '';
 
 store {}, $tg_count_file unless -r $tg_count_file;
 my %chat_counter = %{retrieve($tg_count_file)};
@@ -102,6 +104,17 @@ for(;;) {
       $chat_counter{$chat}++;
 
       next unless (my $text = $upd->{message}{text});
+
+      # highest priority for layout quickfix
+      if ($text =~ /^!!\s*(.*)/) {
+         $lastmsg = $1 || $lastmsg;
+
+         $tg->sendMessage({
+               chat_id => $upd->{message}{chat}{id},
+               text => xlate->cry($lastmsg) || next
+            });
+         next;
+      }
 
       $tg->sendMessage({
             chat_id => $upd->{message}{chat}{id},
