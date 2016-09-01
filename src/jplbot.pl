@@ -382,7 +382,7 @@ sub new_bot_message {
                   $length = int($length + 0.5);
 
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$src: Content-Length: $length $units[$measure].");
+                     "Content-Length: $length $units[$measure].");
 
                   $dead = 1;
                   return;
@@ -414,7 +414,7 @@ sub new_bot_message {
                   }
 
                   $bot->SendGroupMessage($msg{'reply_to'},
-                     "$src: заголовок: [$title]");
+                     "заголовок: [$title]");
                } else {
                   $bot->SendGroupMessage($msg{'reply_to'},
                      "$src: да ну нафиг это парсить...");
