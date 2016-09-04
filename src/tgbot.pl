@@ -103,9 +103,19 @@ for(;;) {
       );
       $chat_counter{$chat}++;
 
+      if (defined $upd->{message}{new_chat_member}) {
+         $tg->sendMessage({
+               chat_id => $upd->{message}{chat}{id},
+               text =>
+               "En taro " . $upd->{message}{new_chat_member}{first_name} . "!"
+            });
+
+         next;
+      }
+
       next unless (my $text = $upd->{message}{text});
 
-      # highest priority for layout quickfix
+      # highest priority for layout quickfix message
       if ($text =~ /^!!\s*(.*)/) {
          $lastmsg = $1 || $lastmsg;
 
