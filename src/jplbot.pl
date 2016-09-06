@@ -42,6 +42,7 @@ my $password  = $cfg{password}     // 'password';
 my $max_messages_per_hour = $cfg{max_messages_per_hour} // 7200;
 my $loop_sleep_time    = $cfg{loop_sleep_time}          // 60;
 my $conference_server  = $cfg{conference_server} // 'conference.jabber.ru';
+my $yandex_api         = $cfg{yandex_api}        // 'yandex_api';
 my %room_passwords     = %{ $cfg{room_passwords} // {
    'ubuntulinux' => 'ubuntu'
 }};
@@ -61,7 +62,7 @@ say "Sayto records: " . keys %sayto if scalar keys %sayto;
 say "Kicker admins: " . keys %kicks if scalar keys %kicks;
 my $karma = karma->new($config_file);
 my $tome = tome->new($config_file);
-my $tran = tran->new();
+my $tran = tran->new($yandex_api);
 $tome->read_tome_file($tome_file);
 
 my %jid_DB = ();

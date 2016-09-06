@@ -27,6 +27,8 @@ $cfg{password} = 'password';
 $cfg{token} = 'token';
 # Username for Telegram
 $cfg{tg_name} = '@korg_bot';
+# Yandex API key for translator
+$cfg{yandex_api} = 'key';
 
 # Maximum number of messages per hour
 $cfg{max_messages_per_hour} = 150;

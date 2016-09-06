@@ -34,6 +34,7 @@ my $token         = $cfg{token}           // 'token';
 my $tome_tg_file  = $cfg{tome_tg_file}    // '/tmp/tome_tg.txt';
 my $karma_tg_file = $cfg{karma_tg_file}   // '/tmp/karma_tg';
 my $tg_count_file = $cfg{tg_count_file}   // '/tmp/count_tg';
+my $yandex_api    = $cfg{yandex_api}      // 'yandex_api';
 
 my $tg = WWW::Telegram::BotAPI->new(token=>$token);
 die "Name mismatch: $name" if $name ne $tg->getMe->{result}{first_name};
@@ -43,7 +44,7 @@ $tome->read_tome_file($tome_tg_file);
 
 my $karma = karma->new($config_file, $karma_tg_file);
 
-my $tran = tran->new();
+my $tran = tran->new($yandex_api);
 
 my $start_time = time;
 my $offset  = 0;

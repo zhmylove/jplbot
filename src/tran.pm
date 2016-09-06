@@ -12,23 +12,25 @@ package tran;
 
 use LWP;
 
-my $ID = 'c967dd7e.57c54f57.eb15d78c-1-0';
+my $KEY = 'yandex_api';
 
+# args: self API_key
 sub new($;$) {
    my $self = shift;
-   my $cfg = shift // {};
-
-   $ID = $cfg->{ID} // $ID;
+   $KEY = shift // $KEY;
 
    return bless {}, $self;
 }
 
-sub get_text_from_json($) { # due to lack of JSON
+sub get_value_from_json($$) { # due to lack of JSON
    my $JSON = shift // return '';
+   my $key = shift // return '';
    utf8::decode($JSON);
 
-   return '' unless $JSON =~ /"text":\["(.*?[^\\])(?=")/;
-   (my $txt = $1) =~ s/\\"/"/g;
+   return '' unless
+   $JSON =~ /"$key":(?<q>(?:\["))?(.*?(?(<q>)[^\\]|[^,]))(?=(?(<q>)"|,))/;
+
+   (my $txt = $2) =~ s/\\"/"/g;
    return $txt;
 }
 
@@ -43,16 +45,19 @@ sub translate($$) {
    $LANG = "ru-en" unless $TXT =~ /^[a-z0-9-_,?'!.\s]*$/i;
    utf8::encode($TXT);
 
-   my $req = HTTP::Request->new(
-      POST => 'http://translate.yandex.net/api/v1/tr.json/translate?' .
-      "id=$ID&srv=tr-text&lang=$LANG&reason=auto");
-   $req->content_type('application/x-www-form-urlencoded');
-   $req->content("options=4&text=$TXT");
+   my $URI = URI->new(
+      'https://translate.yandex.net/api/v1.5/tr.json/translate'
+   );
+   $URI->query_form(key => $KEY, lang => $LANG, text => $TXT);
+   my $req = HTTP::Request->new(GET => $URI);
+   $req->content_type('application/javascript; charset=utf-8');
 
    my $res = $ua->request($req);
    return '' unless $res->is_success;
 
-   return get_text_from_json($res->content);
+   return '' unless (get_value_from_json($res->content, 'code') == 200);
+
+   return get_value_from_json($res->content, 'text');
 }
 
 1;
