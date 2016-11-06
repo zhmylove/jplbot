@@ -64,7 +64,13 @@ sub parse($$) {
          return (1, 0, $t) if int(2*rand);
       }
 
-      when (/(?:perl|перл)/i) {
+      when (/^(?:стих|poem|verse)\s*$/i) {
+
+         chomp (my $poem = `/usr/games/poem`);
+         return (1, 0, $poem);
+      }
+
+      when (/\b(?:perl|перл)/i) {
 
          my $t = get_random(
             "папа ^_^",

@@ -31,6 +31,8 @@ Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
 
 ## Dependencies
+* /usr/games/fortune
+* /usr/games/poem                      -- script to print a random poem (may be symlink for /usr/bin/true)
 * cpan LWP::Protocol::https
 
 #### XMPP
