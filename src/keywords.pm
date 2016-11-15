@@ -79,7 +79,13 @@ sub parse($$) {
          return (1, 0, $t) if int(2*rand);
       }
 
+      when (/^(?:man|help|ман|справка)\s*$/i) {
+
+         return (1, 0, "Ссылка на справку в моём описании!");
+      }
+
       when (m{(^\S+?[:,] |\s|^)(?:man|ман|[mм])[: ]/?/?([a-z0-9-._]+)}i) {
+
          return (0, undef) unless defined $2;
 
          return (1, 0, "$1https://www.freebsd.org/cgi/man.cgi?query=$2");
@@ -128,6 +134,7 @@ sub parse($$) {
       }
 
       when (/^(?:fortune|ф)\s*$/i) {
+
          return (0, 0, undef) if (time - $fortune_time < 2);
          $fortune_time = time;
 
