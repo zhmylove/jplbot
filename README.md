@@ -1,33 +1,35 @@
 # jplbot
-Simple jabber and telegram bot written in perl by KorG.
+Simple Jabber and Telegram bot written in perl by KorG.
 The full command list follows:
 * time           -- show time.
 * date           -- show date & time.
 * help           -- show help message.
 * karma [user]   -- show specified user's karma (yours by default).
-* top [number]   -- show karma top
-* bomb {user}    -- put a bomb on the user or taunt unless argument passed.
-* user: ++       -- increment or decrement specified user's karma.
+* top [number]   -- show karma top.
+* user: ++       -- increment or decrement specified (answered) user's karma.
 * user: +1
 * user: -1
 * user: --
 * fortune        -- show random thesis from fortune(6).
+* poem           -- show some depressive suicidal rhymes.
 * http://uri     -- show information about first found URI.
 * man://page     -- show link to the manpage on freebsd.org.
 * m:page
 * man page
-* g:txt          -- transform txt into link and show the title
+* g:txt          -- transform txt into link and show the title.
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 * ! txt          -- translate txt from en-ru and vice versa.
 * !! [txt]       -- xlate layout en-ru and vice versa of the txt or the last message.
+#### Jabber specific commands
 * add-kicker     -- grant the user kicker privileges.
 * remove-kicker  -- remove the user from the list.
 * list-kickers   -- list users with kick privileges.
 * kick {user}    -- kick the user if you have respective rights.
+* bomb {user}    -- put a bomb on the user or taunt unless argument passed.
 
-To request voice, just send a private message to bot with body: "voice".
+To request voice in a Jabber MUC, just send a private message to bot with body: "voice".
 
-Original paper (in russian) is available via [Tune-IT blogs](http://www.tune-it.ru/web/korg/home/-/blogs/пишем-простенького-jabber-бота-на-perl).  
+Original article about bot's creation (in russian) is available via [Tune-IT blogs](http://www.tune-it.ru/web/korg/home/-/blogs/пишем-простенького-jabber-бота-на-perl).  
 Feel free to change 'time' into 'scalar localtime' in the code if you prefer human-readable format :)
 
 ## Dependencies
@@ -77,4 +79,4 @@ So if you want to save dynamic data more frequent, just tune-up your crontab:
 
 ## What if ...
 If you liked this bot, you can send me a postcard to [s@zhmylove.ru](mailto:s@zhmylove.ru) and star this project on the github.  
-If you want to propose some features, code improvements or bug reports, just use "Issues". Yep, I'll read them.
+If you want to propose some features, code improvements or bug reports, just use "Issues" feature. Yep, I'll read them.
