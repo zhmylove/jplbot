@@ -60,7 +60,7 @@ my $tome_file     = undef;
 my $tome_max      = 300;
 my $tome_msg_max  = 300;
 
-my %tome;
+my @tome;
 srand;
 
 =item B<new($$)>
@@ -96,7 +96,7 @@ sub new($$) {
 
    Returns nothing interesting
    Argument 0 is a reference to self package
-   Argument 1 is a name of the configuration file
+   Argument 1 is a name of the tome file
 
 This function slurps the array of the phrases used to generate a replies.
 
@@ -108,9 +108,11 @@ sub read_tome_file($$) {
 
    if (-r $tome_file) {
       open my $tome_fh, "<:utf8", $tome_file or warn "Can't open $tome_file!";
-      chomp, $tome{$_} = 1 while (<$tome_fh>);
+      @tome = <$tome_fh>;
+      @tome = grep { !/^[\s\d-+]+$/ } @tome;
+      chomp @tome;      
       close $tome_fh;
-      say "Tome records: " . keys %tome if scalar keys %tome;
+      say "Tome records: " . scalar @tome if scalar @tome;
    }
 }
 
@@ -127,7 +129,7 @@ sub save_tome_file {
    die 'No tome.txt file specified' unless defined $tome_file;
 
    open my $tome_fh, ">:utf8", $tome_file or warn "Can't open $tome_file!";
-   say $tome_fh join "\n", keys %tome and say "Tome saved to: $tome_file";
+   say $tome_fh join "\n", @tome and say "Tome saved to: $tome_file";
 }
 
 =item B<message($$)>
@@ -144,18 +146,19 @@ saved in the array previously and uses it as a return value.
 
 sub message($$) {
    my $self = shift;
-   my $txt = shift // die 'Insufficient arguments';
-
-   my $rndkey = (keys %tome)[rand keys %tome];
+   my $txt  = shift // die 'Insufficient arguments';
    
-   if ($txt =~ m{[^\s\n+\d-]}) {
+   my $rnd_idx = int rand scalar @tome; 
+   my $rnd_msg = $tome[$rnd_idx];
+   
+   if ($txt =~ m{[^\s+\d-]}) {
       my $txt = (split '\n', $txt)[0];
-
-      delete $tome{ $rndkey } if (keys %tome >= $tome_max);
-      $tome{$txt} = substr $txt, 0, $tome_msg_max;
+      $txt = substr ($txt, 0, $tome_msg_max) if length $txt >= $tome_msg_max;
+      delete $tome[$rnd_idx] if scalar @tome >= $tome_max;
+      push @tome, $txt;      
    }
 
-   return $rndkey;
+   return $rnd_msg;
 }
 
 1;
