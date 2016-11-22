@@ -108,11 +108,9 @@ sub read_tome_file($$) {
 
    if (-r $tome_file) {
       open my $tome_fh, "<:utf8", $tome_file or warn "Can't open $tome_file!";
-      @tome = <$tome_fh>;
-      @tome = grep { !/^[\s\d-+]+$/ } @tome;
-      chomp @tome;      
+      chomp (@tome = <$tome_fh>);
       close $tome_fh;
-      say "Tome records: " . scalar @tome if scalar @tome;
+      say "Tome records: " . scalar @tome if @tome;
    }
 }
 
@@ -151,11 +149,14 @@ sub message($$) {
    my $rnd_idx = int rand scalar @tome; 
    my $rnd_msg = $tome[$rnd_idx];
    
-   if ($txt =~ m{[^\s+\d-]}) {
+   if ($txt =~ m{[^\s\d-+]}) {
       my $txt = (split '\n', $txt)[0];
-      $txt = substr ($txt, 0, $tome_msg_max) if length $txt >= $tome_msg_max;
-      delete $tome[$rnd_idx] if scalar @tome >= $tome_max;
-      push @tome, $txt;      
+      $txt = substr ($txt, 0, $tome_msg_max);
+      if (@tome >= $tome_max) {
+         $tome[$rnd_idx] = $txt;
+      } else {
+         push @tome, $txt;
+      }      
    }
 
    return $rnd_msg;
