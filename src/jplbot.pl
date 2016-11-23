@@ -236,8 +236,6 @@ sub new_bot_message {
    $reply = "$src: " . $reply if $personal;
    $bot->SendGroupMessage($msg{'reply_to'}, $reply), return if $keyword;
 
-   PARSE_MESSAGE: # for google://
-
    # layout quickfick needs to have the highest priority
    if ($msg{'body'} =~ /^!!\s*(.*)/) {
       $lastmsg = $1 || $lastmsg;
@@ -285,7 +283,7 @@ sub new_bot_message {
 
       when (/^(?:bomb|бомба)\s*$/i) {
          $bot->SendGroupMessage($msg{'reply_to'},
-            "$src: бомба -- это не игрушки!");
+            "$src: бомба -- это не игрушка!");
       }
 
       when (/^list-kickers?$/i) {
@@ -346,7 +344,7 @@ sub new_bot_message {
             "$src: https://www.google.ru/search?q=$1");
 
          $msg{'body'} = "https://www.google.ru/search?q=$1";
-         goto "PARSE_MESSAGE";
+         continue;
       }
 
       when (m{(https?://\S+)}) {
