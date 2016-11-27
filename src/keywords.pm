@@ -67,6 +67,7 @@ sub parse($$) {
       when (/^(?:стих|poem|verse)\s*$/i) {
 
          chomp (my $poem = `/usr/games/poem`);
+         utf8::decode($poem);
          return (1, 0, $poem);
       }
 
