@@ -159,9 +159,9 @@ for(;;) {
       $text =~ s@^/(.*?)(?:$tg_name)?$@$1@i;
 
       if (
-         $text =~ s/^[бb](от|ot)?(?:$|\s*[,?:!]\s*)//i ||
-         $text =~ s/^$name(?:[,:])\s*//i ||
-         $text =~ s/^$tg_name(?:[,:])?\s*//i ||
+         $text =~ s/^[бb](от|ot)?(?:\s*$|\s*[,?:!]\s*)//i ||
+         $text =~ s/^$name(?:[,:]|\b)\s*//i ||
+         $text =~ s/^$tg_name(?:[,:]|\b)?\s*//i ||
          $process ||
          $text =~ s/[,\s](?<cleanup>бот|bot)(?:[,?:!\s]|$)//i
       ) {
