@@ -244,12 +244,14 @@ for(;;) {
                });
          }
 
-         when (m{(?:^|\s)(?:google|[гg]):/?/?(\S+)}i) {
-            next unless defined $1;
+         when (m{(?:(?<b>^)|\s)(?:google|[гg]):/?/?((?(<b>)\S.*|\S+))}i) {
+            next unless defined $2;
 
+            my $text = $2;
+            $text =~ s/\s+/+/g;
             $tg->sendMessage({
                   chat_id => $upd->{message}{chat}{id},
-                  text => "https://www.google.ru/search?q=$1"
+                  text => "https://www.google.ru/search?q=$text"
                });
          }
 
