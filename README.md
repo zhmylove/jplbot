@@ -16,10 +16,11 @@ The full command list follows:
 * man://page     -- show link to the manpage on freebsd.org.
 * m:page
 * man page
-* g:txt          -- transform txt into link and show the title.
+* g:txt          -- transform txt into link to Google and show the title.
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 * ! txt          -- translate txt from en-ru and vice versa.
 * !! [txt]       -- xlate layout en-ru and vice versa of the txt or the last message.
+
 #### Jabber specific commands
 * add-kicker     -- grant the user kicker privileges.
 * remove-kicker  -- remove the user from the list.

@@ -163,7 +163,7 @@ for(;;) {
          $text =~ s/^$name(?:[,:]|\b)\s*//i ||
          $text =~ s/^$tg_name(?:[,:]|\b)?\s*//i ||
          $process ||
-         $text =~ s/[,\s](?<cleanup>бот|bot)(?:[,?:!\s]|$)//i
+         $text =~ s/[,\s](?<cleanup>бот|bot)(?:[ау]|ом|ов)?(?:[,?:!\s]|$)//i
       ) {
          $text = '' if $+{cleanup};
 
@@ -241,6 +241,15 @@ for(;;) {
                   chat_id => $upd->{message}{chat}{id},
                   reply_to_message_id => $upd->{message}{message_id},
                   text => ucfirst($text)
+               });
+         }
+
+         when (m{(?:^|\s)(?:google|[гg]):/?/?(\S+)}i) {
+            next unless defined $1;
+
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  text => "https://www.google.ru/search?q=$1"
                });
          }
 
