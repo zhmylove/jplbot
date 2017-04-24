@@ -149,6 +149,8 @@ sub message($$) {
    
    my $rnd_idx = int rand scalar @tome; 
    my $rnd_msg = $tome[$rnd_idx];
+
+   return $rnd_msg if $txt =~ m{[/@]};
    
    if ($txt =~ m{[^+\s\d-]}) {
       my $txt = (split '\n', $txt)[0];
