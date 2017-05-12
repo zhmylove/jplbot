@@ -151,6 +151,8 @@ sub message($$) {
    my $rnd_msg = $tome[$rnd_idx];
 
    return $rnd_msg if $txt =~ m{[/@]};
+
+   $_ eq $txt && return $rnd_msg for @tome;
    
    if ($txt =~ m{[^+\s\d-]}) {
       my $txt = (split '\n', $txt)[0];
