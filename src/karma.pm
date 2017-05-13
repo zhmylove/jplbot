@@ -90,8 +90,11 @@ sub allowed_like {
       if ($last_like_max <= keys %{ $last_like{$src} }) {
          return 0;
       } else {
+         my $rc = ! defined $last_like{$src}->{$dst};
+
          $last_like{$src}->{$dst} = time;
-         return 1;
+
+         return $rc;
       }
    } else {
       $last_like{$src}->{$dst} = time;
