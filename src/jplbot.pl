@@ -208,7 +208,8 @@ sub new_bot_message {
    my ($resource, $src) = split '/', $msg{'from_full'};
    my $room = (split '@', $resource)[0];
 
-   return if $src eq ">"; # ignore other my bots ;-)
+   # ignore other my bots ;-)
+   return if $src eq ">" and $msg{'body'} !~ m{^[^:]*:\s*([+-])\1*\s*$}s;
 
    if ($msg{'body'} =~ s{^(?:$qname: |[бb](от|ot)?$)}{}i) {
       my $rndkey = $tome->message($msg{'body'});
@@ -538,12 +539,14 @@ sub new_bot_message {
 
                   when (/^($qnick):?\s*\+[+1]+\s*$/) {
                      $bot->SendGroupMessage($msg{'reply_to'}, 
-                        "$src: " . $karma->inc_karma($src, $nick));
+                        ( $src eq ">" ? "God " : "$src: " ) .
+                        $karma->inc_karma($src, $nick));
                   }
 
                   when (/^($qnick):?\s*\-[-1]+\s*$/) {
                      $bot->SendGroupMessage($msg{'reply_to'}, 
-                        "$src: " . $karma->dec_karma($src, $nick));
+                        ( $src eq ">" ? "God " : "$src: " ) .
+                        $karma->dec_karma($src, $nick));
                   }
 
                   when (/^remove[- ]kicker$rb+?($qnick)$/i) {
