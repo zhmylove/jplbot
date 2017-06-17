@@ -130,7 +130,7 @@ sub say_to {
 
    return unless (defined $sayto{$room} && defined $sayto{$room}->{$dst});
 
-   foreach my $src (keys $sayto{$room}->{$dst}) {
+   for my $src (keys $sayto{$room}->{$dst}) {
       $bot->SendPersonalMessage("$room\@$conference_server/$nick",
          "Тебе писал $src: [" . $sayto{$room}->{$dst}->{$src}->{'text'} . "]");
 
@@ -169,7 +169,7 @@ sub bomb_user {
       "Детка, только дай мне повод и я взорву для тебя весь город!");
 
    my $current = '';
-   foreach (keys $jid_DB{"jid_$room"}) {
+   for (keys $jid_DB{"jid_$room"}) {
       $current = $_ if $jid_DB{"jid_$room"}->{$_} eq $jid;
    }
    $current =~ s/'/\&apos;/g;
@@ -180,14 +180,14 @@ sub bomb_user {
 sub background_checks {
    my $bot = shift;
 
-   foreach(keys %bomb_time){
+   for (keys %bomb_time) {
       bomb_user($bot, $_) if (time >
          $bomb_time{lc($_)} + $loop_sleep_time);
    }
 
-   foreach my $room (keys %room_passwords) {
-      foreach my $dst (keys $sayto{$room}) {
-         foreach my $src (keys $sayto{$room}->{$dst}) {
+   for my $room (keys %room_passwords) {
+      for my $dst (keys $sayto{$room}) {
+         for my $src (keys $sayto{$room}->{$dst}) {
             delete $sayto{$room}->{$dst}->{$src} if ( time >
                $sayto{$room}->{$dst}->{$src}->{'time'} + $sayto_keep_time
             );
@@ -375,7 +375,7 @@ sub new_bot_message {
                   return;
                }
 
-               foreach($response->header("Content-type")){
+               for ($response->header("Content-type")) {
                   given ($_) {
                      when (m{^text/html} || /korg/) { $type{'html'}++; }
                      when (m{^image/}) { $type{'image'}++; }
@@ -464,7 +464,7 @@ sub new_bot_message {
 
       default {
          # manual check for nick presence, performance hack
-         foreach my $nick (keys $jid_DB{$room}) {
+         for my $nick (keys $jid_DB{$room}) {
             my $qnick = quotemeta($nick);
 
             if (" $msg{body} " =~ m{$rb$qnick$rb}i) {
