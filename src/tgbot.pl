@@ -16,6 +16,7 @@ use keywords;
 use karma;
 use tran;
 use xlate;
+use sweets;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -264,6 +265,37 @@ for(;;) {
                   reply_to_message_id => $upd->{message}{message_id},
                   text => ucfirst($text)
                });
+         }
+
+         when (/^\s*\/(?:suicide|суицид)\s*$/) {
+            my $chat = $upd->{message}{chat}{id};
+            my $user = $upd->{message}{from}{id};
+            my $mesg = "Ах, какая жалость!";
+
+            # Warning: bot must have adminstrator rights in a chat.
+            # If something went wrong, check updates/settings recommendation
+            # on the following link:
+            # https://core.telegram.org/bots/api#kickchatmember
+            $tg->kickChatMember ({ chat_id => $chat, user_id => $user });
+            $tg->unbanChatMember({ chat_id => $chat, user_id => $user });
+            $tg->sendMessage    ({
+                    chat_id => $chat,
+                    user_id => $user,
+                    text    => $mesg
+                });
+         }
+
+         # sudden joke from bot
+         when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/) {
+            my $chat = $upd->{message}{chat}{id};
+            my $user = $upd->{message}{from}{id};
+            my $joke = sweets->fetch_bash_joke || 
+                        "Ой, как-то не выходит пошутить";
+            $tg->sendMessage({
+                    chat_id => $chat, 
+                    user_id => $user, 
+                    text => $joke
+                });
          }
       }
    }
