@@ -16,6 +16,7 @@ use keywords;
 use karma;
 use tran;
 use xlate;
+use sweets;
 
 my $config_file = './config.pl';
 our %cfg;
@@ -281,6 +282,18 @@ for(;;) {
                     chat_id => $chat,
                     user_id => $user,
                     text    => $mesg
+                });
+         }
+
+         when (/^\s.*\/(?:bash|баш|joke|шутк(?:а|у)!?\s*$/) {
+            my $chat = $upd->{message}{chat}{id};
+            my $user = $upd->{message}{from}{id};
+            my $joke = sweets->fetch_bash_joke || 
+                        "Ой, как-то не выходит пошутить";
+            $tg->sendMessage({
+                    chat_id => $chat, 
+                    user_id => $user, 
+                    text => $joke
                 });
          }
       }
