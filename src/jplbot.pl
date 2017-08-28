@@ -591,7 +591,8 @@ sub new_bot_message {
                      return give_role($bot, $resource, $nick, 'none');
                   }
 
-                  when (/^\s.*\/(?:bash|баш|joke|шутк(?:а|у)!?\s*$/) {
+                  # sudden joke from bot
+                  when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/) {
                       my $joke = sweets->fetch_bash_joke || 
                                  "Ой, как-то не выходит пошутить";
                       $bot->SendGroupMessage($msg{'reply_to'}, $joke);

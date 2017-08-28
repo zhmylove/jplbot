@@ -285,7 +285,8 @@ for(;;) {
                 });
          }
 
-         when (/^\s.*\/(?:bash|баш|joke|шутк(?:а|у)!?\s*$/) {
+         # sudden joke from bot
+         when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/) {
             my $chat = $upd->{message}{chat}{id};
             my $user = $upd->{message}{from}{id};
             my $joke = sweets->fetch_bash_joke || 
