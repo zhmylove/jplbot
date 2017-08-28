@@ -267,7 +267,7 @@ for(;;) {
                });
          }
 
-         when (/^\s*\/(?:suicide|суицид)\s*$/) {
+         when (/^\s*\/(?:suicide|суицид)\s*$/i) {
             my $chat = $upd->{message}{chat}{id};
             my $user = $upd->{message}{from}{id};
             my $mesg = "Ах, какая жалость!";
@@ -286,7 +286,7 @@ for(;;) {
          }
 
          # sudden joke from bot
-         when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/) {
+         when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/i) {
             my $chat = $upd->{message}{chat}{id};
             my $user = $upd->{message}{from}{id};
             my $joke = sweets->fetch_bash_joke || 

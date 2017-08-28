@@ -592,7 +592,7 @@ sub new_bot_message {
                   }
 
                   # sudden joke from bot
-                  when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/) {
+                  when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/i) {
                       my $joke = sweets->fetch_bash_joke || 
                                  "Ой, как-то не выходит пошутить";
                       $bot->SendGroupMessage($msg{'reply_to'}, $joke);
