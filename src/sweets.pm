@@ -12,6 +12,7 @@ package sweets;
 
 use LWP;
 use Encode qw/decode/;
+use HTML::Entities;
 
 my $ua = LWP::UserAgent->new();
 
@@ -26,10 +27,8 @@ sub fetch_bash_joke {
     my $quote = $1 if $bash =~ m/<div class="quote">.*?<div class="text">(.*?)<\/div>/s;
 
     $quote =~ s/<br.*?>/\n/g;
-    $quote =~ s/&lt/</g;
-    $quote =~ s/&gt/>/g;
 
-    return $quote;
+    return decode_entities($quote);
 }
 
 1;
