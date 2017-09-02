@@ -296,9 +296,9 @@ for(;;) {
             $tg->sendMessage({ chat_id => $chat, text => $joke });
          }
 
-         when (/^\s*(?:weather|погода)(?: (.*?))?\s*$/) {
+         when (/^\s*(?:weather|погода)(?:\s+(.*?))?\s*$/i) {
             my $chat = $upd->{message}{chat}{id};
-            my $city = $1 ? $1 : "Saint+Petersburg";
+            my $city = $1;
             my $url  = sweets->get_weather_image_url($city);
             $tg->sendPhoto({ chat_id => $chat, photo => $url });
          }
