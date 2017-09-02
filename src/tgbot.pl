@@ -300,7 +300,6 @@ for(;;) {
             my $chat = $upd->{message}{chat}{id};
             my $city = $1;
             my $url  = sweets->get_weather_image_url($city);
-            say $url;
             $tg->sendPhoto({ chat_id => $chat, photo => $url });
          }
       }
