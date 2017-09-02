@@ -267,7 +267,7 @@ for(;;) {
                });
          }
 
-         when (/^\s*\/(?:suicide|суицид)\s*$/) {
+         when (/^\s*\/(?:suicide|суицид)\s*$/i) {
             my $chat = $upd->{message}{chat}{id};
             my $user = $upd->{message}{from}{id};
             my $mesg = "Ах, какая жалость!";
@@ -278,24 +278,29 @@ for(;;) {
             # https://core.telegram.org/bots/api#kickchatmember
             $tg->kickChatMember ({ chat_id => $chat, user_id => $user });
             $tg->unbanChatMember({ chat_id => $chat, user_id => $user });
-            $tg->sendMessage    ({
-                    chat_id => $chat,
-                    user_id => $user,
-                    text    => $mesg
-                });
+            $tg->sendMessage    ({ chat_id => $chat, text    => $mesg });
          }
 
          # sudden joke from bot
-         when (/\b(?:(?:ba|k|z|c)?sh|баш|joke|шутк(?:а|у))\b/) {
+         when (/\b(?:(?:ba|k|z|c)?sh|joke)\b/i) {
             my $chat = $upd->{message}{chat}{id};
-            my $user = $upd->{message}{from}{id};
+            my $joke = sweets->fetch_xkcdb_joke || 
+                        "Ой, как-то не выходит пошутить";
+            $tg->sendMessage({ chat_id => $chat, text => $joke });
+         }
+
+         when (/\b(?:баш|шутк(?:а|у))\b/i) {
+            my $chat = $upd->{message}{chat}{id};
             my $joke = sweets->fetch_bash_joke || 
                         "Ой, как-то не выходит пошутить";
-            $tg->sendMessage({
-                    chat_id => $chat, 
-                    user_id => $user, 
-                    text => $joke
-                });
+            $tg->sendMessage({ chat_id => $chat, text => $joke });
+         }
+
+         when (/^\s*(?:weather|погода)(?: (.*?))?\s*$/) {
+            my $chat = $upd->{message}{chat}{id};
+            my $city = $1 ? $1 : "Saint+Petersburg";
+            my $url  = sweets->get_weather_image_url($city);
+            $tg->sendPhoto({ chat_id => $chat, photo => $url });
          }
       }
    }
