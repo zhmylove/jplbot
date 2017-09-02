@@ -300,7 +300,14 @@ for(;;) {
             my $chat = $upd->{message}{chat}{id};
             my $city = $1;
             my $url  = sweets->get_weather_image_url($city);
-            $tg->sendPhoto({ chat_id => $chat, photo => $url });
+            if ($url) {
+                $tg->sendPhoto({ chat_id => $chat, photo => $url });
+            } else {
+                $tg->sendMessage({ 
+                        chat_id => $chat,
+                        text    => "Поломать меня решил?!"
+                    });
+            }
          }
       }
    }
