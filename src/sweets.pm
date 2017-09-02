@@ -12,7 +12,7 @@ package sweets;
 
 use LWP;
 use Encode qw/decode/;
-use tables qw/entity2char/;
+use tables qw/%entity2char/;
 
 my $ua = LWP::UserAgent->new();
 

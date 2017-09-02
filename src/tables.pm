@@ -8,9 +8,10 @@ use utf8;
 binmode STDOUT, ':utf8';
 
 package tables;
+
 require Exporter;
-@ISA = qw(Exporter);
-@EXPORT_OK = qw(entity2char);
+our @ISA = qw(Exporter);
+our @EXPORT_OK = qw(%entity2char);
 
 our %entity2char = (
  amp    => '&',
