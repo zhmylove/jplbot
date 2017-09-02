@@ -15,7 +15,8 @@ use Encode qw/decode/;
 
 my $ua = LWP::UserAgent->new();
 
-my $BASH = "http://bash.im/random";
+my $BASH  = "http://bash.im/random";
+my $XKCDB = "http://www.xkcdb.com/random";
 
 my %entity2char = (
  amp    => '&',
@@ -290,6 +291,24 @@ sub fetch_bash_joke {
     $quote =~ s/&$key;/$value/g while(($key, $value) = each %entity2char);
 
     return $quote;
+}
+
+sub fetch_xkcdb_joke {
+    my $response = $ua->get($XKCDB);
+    my ($key, $value);
+
+    return undef unless ($response->is_success && 
+                         $response->content_type eq 'text/html');
+
+    my $quote = $1 if $response->content =~ 
+        m/<p class="quoteblock">.*?<span class="quote">(.*?)<\/span>/s;
+
+    # xkcdb quotes already have line breakers as well as <br>
+    $quote =~ s/<br.*?>//g;
+    $quote =~ s/&$key;/$value/g while(($key, $value) = each %entity2char);
+
+    return $quote;
+
 }
 
 1;
