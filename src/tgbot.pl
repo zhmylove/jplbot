@@ -295,6 +295,12 @@ for(;;) {
                         "Ой, как-то не выходит пошутить";
             $tg->sendMessage({ chat_id => $chat, text => $joke });
          }
+
+         when (/^\s*(?:weather|погода)(?: (.*?))?\s*$/) {
+            my $chat = $upd->{message}{chat}{id};
+            my $city = $1 ? $1 : "Saint+Petersburg";
+            my $url  = sweets->get_weather_image_url($city);
+            $tg->sendPhoto({ chat_id => $chat, photo => $url });
          }
       }
    }
