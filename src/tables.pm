@@ -267,3 +267,5 @@ our %entity2char = (
  'hearts'   => chr(9829),
  'diams'    => chr(9830),
 );
+
+1;
