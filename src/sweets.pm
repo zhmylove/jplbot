@@ -62,7 +62,16 @@ sub get_weather_image_url($) {
     my $self = shift;
     my $city = shift // "Saint+Petersburg";
     $city =~ s/\s+/+/g;
-    return $WTTR . $city . $WTTR_SUFFIX_IMAGE;
+    return undef if $city =~ m/[^+\w]/;
+    return undef if $city =~ m/^\++$/;
+    my $url = $WTTR . $city . $WTTR_SUFFIX_IMAGE;
+    
+    #check for image
+    my $response = $ua->get($url);
+    return undef unless ($response->is_success && 
+                         $response->content_type eq 'image/png');
+
+    return $url;
 }
 
 1;
