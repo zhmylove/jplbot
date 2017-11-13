@@ -26,10 +26,13 @@ sub fetch_bash_joke {
     my $response = $ua->get($BASH);
     my ($key, $value);
 
-    return undef unless ($response->is_success && $response->content_type eq 'text/html');
+    return undef unless (
+       $response->is_success && $response->content_type eq 'text/html'
+    );
 
     my $bash = decode("Windows-1251", $response->content);
-    my $quote = $1 if $bash =~ m/<div class="quote">.*?<div class="text">(.*?)<\/div>/s;
+    $bash =~ m/<div class="quote">.*?<div class="text">(.*?)<\/div>/s;
+    my $quote = $1 // "";
 
     $quote =~ s/<br.*?>/\n/g;
 

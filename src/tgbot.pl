@@ -290,6 +290,8 @@ for(;;) {
          }
 
          when (/\b(?:баш|шутк(?:а|у))\b/i) {
+            next if int(3.5*rand);
+
             my $chat = $upd->{message}{chat}{id};
             my $joke = sweets->fetch_bash_joke || 
                         "Ой, как-то не выходит пошутить";
