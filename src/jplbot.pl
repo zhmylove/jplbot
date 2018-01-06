@@ -130,13 +130,13 @@ sub say_to {
 
    return unless (defined $sayto{$room} && defined $sayto{$room}->{$dst});
 
-   for my $src (keys $sayto{$room}->{$dst}) {
+   for my $src (keys %{$sayto{$room}->{$dst}}) {
       $bot->SendPersonalMessage("$room\@$conference_server/$nick",
          "Тебе писал $src: [" . $sayto{$room}->{$dst}->{$src}->{'text'} . "]");
 
       delete $sayto{$room}->{$dst}->{$src};
 
-      delete $sayto{$room}->{$dst} unless scalar keys $sayto{$room}->{$dst};
+      delete $sayto{$room}->{$dst} unless scalar keys %{$sayto{$room}->{$dst}};
    }
 }
 
@@ -169,7 +169,7 @@ sub bomb_user {
       "Детка, только дай мне повод и я взорву для тебя весь город!");
 
    my $current = '';
-   for (keys $jid_DB{"jid_$room"}) {
+   for (keys %{$jid_DB{"jid_$room"}}) {
       $current = $_ if $jid_DB{"jid_$room"}->{$_} eq $jid;
    }
    $current =~ s/'/\&apos;/g;
@@ -186,14 +186,15 @@ sub background_checks {
    }
 
    for my $room (keys %room_passwords) {
-      for my $dst (keys $sayto{$room}) {
-         for my $src (keys $sayto{$room}->{$dst}) {
+      for my $dst (keys %{$sayto{$room}}) {
+         for my $src (keys %{$sayto{$room}->{$dst}}) {
             delete $sayto{$room}->{$dst}->{$src} if ( time >
                $sayto{$room}->{$dst}->{$src}->{'time'} + $sayto_keep_time
             );
          }
 
-         delete $sayto{$room}->{$dst} unless scalar keys $sayto{$room}->{$dst};
+         delete $sayto{$room}->{$dst} unless scalar keys
+         %{$sayto{$room}->{$dst}};
       }
    }
 }
@@ -308,7 +309,7 @@ sub new_bot_message {
          }
 
          if (defined $sayto{$room}) {
-            if (scalar keys $sayto{$room} > $sayto_max) {
+            if (scalar keys %{$sayto{$room}} > $sayto_max) {
                $bot->SendGroupMessage($msg{'reply_to'},
                   "$src: у меня кончилось место :(");
 
@@ -464,7 +465,7 @@ sub new_bot_message {
 
       default {
          # manual check for nick presence, performance hack
-         for my $nick (keys $jid_DB{$room}) {
+         for my $nick (keys %{$jid_DB{$room}}) {
             my $qnick = quotemeta($nick);
 
             if (" $msg{body} " =~ m{$rb$qnick$rb}i) {
