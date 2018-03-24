@@ -27,6 +27,8 @@ unless (my $rc = do $config_file) {
    warn "couldn't run $config_file" unless $rc;
 }
 
+say localtime . " Starting JPLBOT...";
+
 # DEFAULT VALUES. don't change them here
 # see comments in the 'config.pl'
 my $name      = $cfg{name}         // 'AimBot';
@@ -119,7 +121,7 @@ sub get_jid {
 sub shutdown {
    save_data;
 
-   say "Uptime: " . (time - $start_time);
+   say localtime . " Uptime: " . (time - $start_time);
 
    exit 0;
 }

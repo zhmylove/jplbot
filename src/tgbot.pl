@@ -27,6 +27,8 @@ unless (my $rc = do $config_file) {
    warn "couldn't run $config_file" unless $rc;
 }
 
+say localtime . " Starting TGBOT...";
+
 # DEFAULT VALUES. don't change them here
 # see comments in the 'config.pl'
 my $name          = $cfg{name}            // 'AimBot';
@@ -72,7 +74,7 @@ sub save_data {
 sub shutdown {
    save_data;
 
-   say "Uptime: " . (time - $start_time);
+   say localtime . " Uptime: " . (time - $start_time);
 
    exit 0;
 }
