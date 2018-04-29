@@ -29,6 +29,8 @@ $cfg{token} = 'token';
 $cfg{tg_name} = '@korg_bot';
 # Yandex API key for translator
 $cfg{yandex_api} = 'key';
+# Optionally set here SOCKS proxy like 'socks://[user:pass@]host:port';
+$cfg{proxy} = '';
 
 # Maximum number of messages per hour
 $cfg{max_messages_per_hour} = 150;

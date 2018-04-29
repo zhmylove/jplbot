@@ -38,9 +38,18 @@ my $tome_tg_file  = $cfg{tome_tg_file}    // '/tmp/tome_tg.txt';
 my $karma_tg_file = $cfg{karma_tg_file}   // '/tmp/karma_tg';
 my $tg_count_file = $cfg{tg_count_file}   // '/tmp/count_tg';
 my $yandex_api    = $cfg{yandex_api}      // 'yandex_api';
+my $proxy         = $cfg{proxy}           // '';
 
-my $tg = WWW::Telegram::BotAPI->new(token=>$token);
+my $tg = WWW::Telegram::BotAPI->new(token=>$token, force_lwp=>1);
 die "Name mismatch: $name" if $name ne $tg->getMe->{result}{first_name};
+
+my $ua = $tg->agent;
+if (length $proxy && $ua->isa('LWP::UserAgent')) {
+   require LWP::Protocol::socks;
+   $ua->proxy([qw.http https.] => $proxy);
+} else {
+   die "Error: $proxy LWP::UserAgent not in use!";
+}
 
 my $tome = tome->new($config_file);
 $tome->read_tome_file($tome_tg_file);

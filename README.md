@@ -37,6 +37,7 @@ Feel free to change 'time' into 'scalar localtime' in the code if you prefer hum
 * /usr/games/fortune
 * /usr/games/poem                      -- script to print a random poem (may be symlink for /usr/bin/true)
 * cpan LWP::Protocol::https
+* cpan LWP::Protocol::socks            -- (optional) SOCKS proxy capability
 
 #### XMPP
 * cpan Net::Jabber
