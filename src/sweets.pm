@@ -26,7 +26,7 @@ sub fetch_bash_joke {
     my $response = $ua->get($BASH);
     my ($key, $value);
 
-    return undef unless (
+    return "" unless (
        $response->is_success && $response->content_type eq 'text/html'
     );
 
@@ -48,11 +48,12 @@ sub fetch_xkcdb_joke {
     my $response = $ua->get($XKCDB);
     my ($key, $value);
 
-    return undef unless ($response->is_success && 
+    return "" unless ($response->is_success && 
                          $response->content_type eq 'text/html');
 
-    my $quote = $1 if $response->content =~ 
-        m/<p class="quoteblock">.*?<span class="quote">(.*?)<\/span>/s;
+    my $quote = ($response->content =~ 
+        m/<p class="quoteblock">.*?<span class="quote">(.*?)<\/span>/s) ?
+        $1 : "";
 
     # xkcdb quotes already have line breakers as well as <br>
     $quote =~ s/<br.*?>//g;
@@ -65,13 +66,13 @@ sub get_weather_image_url($) {
     my $self = shift;
     my $city = shift // "Saint+Petersburg";
     $city =~ s/\s+/+/g;
-    return undef if $city =~ m/[^+\w]/;
-    return undef if $city =~ m/^\++$/;
+    return "" if $city =~ m/[^+\w]/;
+    return "" if $city =~ m/^\++$/;
     my $url = $WTTR . $city . $WTTR_SUFFIX_IMAGE;
     
     #check for image
     my $response = $ua->get($url);
-    return undef unless ($response->is_success && 
+    return "" unless ($response->is_success && 
                          $response->content_type eq 'image/png');
 
     return $url;
