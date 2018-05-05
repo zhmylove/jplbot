@@ -144,12 +144,11 @@ for(;;) {
 
       unless ($chat_counter{$chat} % 256) {
          my $tome_msg = $tome->message('');
-         next unless length $tome_msg;
 
          $tg->sendMessage({
                chat_id => $upd->{message}{chat}{id},
                text => $tome_msg
-            });
+            }) if length $tome_msg;
       }
 
       next if defined $upd->{message}{forward_date};
