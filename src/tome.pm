@@ -36,15 +36,18 @@ messages exceeded.  The I<configuration> could contain the variables below:
 
    $cfg{tome_max}       = 300;
    $cfg{tome_msg_max}   = 300;
+   $cfg{tome_dict}      = '/tmp/dictionary';
 
 They specifies a maximum number of saved messages per module instance and
-a maximum message length.
+a maximum message length.  B<tome_dict> optionally specifies a path to
+dictionary file which is used as a white list memory filter.
 
 =head1 EXAMPLES
 
    use tome;
    my $tome = tome->new($config_file);
    $tome->read_tome_file($tome_file);
+   $tome->read_tome_file($tome_file, $tome_dict);
 
    my $reply = $tome->message($text);
 
@@ -59,6 +62,8 @@ package tome;
 my $tome_file     = undef;
 my $tome_max      = 300;
 my $tome_msg_max  = 300;
+my $tome_dict     = undef;
+my $tome_dict_re  = undef;
 
 my @tome;
 srand;
@@ -105,6 +110,7 @@ This function slurps the array of the phrases used to generate a replies.
 sub read_tome_file($$) {
    my $self = shift;
    $tome_file = shift // die 'No tome.txt file specified';
+   $tome_dict = shift;
 
    if (-r $tome_file) {
       open my $tome_fh, "<:utf8", $tome_file or warn "Can't open $tome_file!";
@@ -112,6 +118,18 @@ sub read_tome_file($$) {
       @tome = grep { !/^[+\s\d-]+$/ } @tome;
       close $tome_fh;
       say "Tome records: " . scalar @tome if @tome;
+   }
+
+   if (defined $tome_dict and -r $tome_dict) {
+      open my $tome_dh, "<:utf8", $tome_dict or warn "Can't open $tome_dict!";
+      my @dict;
+      chomp (@dict = <$tome_dh>);
+      @dict = grep { !/^[+\s\d-]+$/ } @dict;
+      close $tome_dh;
+      $tome_dict_re = join "|", @dict;
+      $tome_dict_re =~ s/\//./g;
+      $tome_dict_re = qr/$tome_dict_re/;
+      say "Tome dictionary records: " . scalar @dict if @dict;
    }
 }
 
@@ -154,7 +172,10 @@ sub message($$) {
 
    $_ eq $txt && return $rnd_msg for @tome;
    
-   if ($txt =~ m{[^+\s\d-]}) {
+   if (
+      $txt =~ m{[^+\s\d-]} and
+      defined $tome_dict_re ? $txt =~ m{$tome_dict_re}i : 1
+   ) {
       my $txt = (split '\n', $txt)[0];
       $txt = substr ($txt, 0, $tome_msg_max);
       if (@tome >= $tome_max) {

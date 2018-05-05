@@ -35,6 +35,7 @@ my $name          = $cfg{name}            // 'AimBot';
 my $tg_name       = $cfg{tg_name}         // '@korg_bot';
 my $token         = $cfg{token}           // 'token';
 my $tome_tg_file  = $cfg{tome_tg_file}    // '/tmp/tome_tg.txt';
+my $tome_dict     = $cfg{tome_dict}       // '';
 my $karma_tg_file = $cfg{karma_tg_file}   // '/tmp/karma_tg';
 my $tg_count_file = $cfg{tg_count_file}   // '/tmp/count_tg';
 my $yandex_api    = $cfg{yandex_api}      // 'yandex_api';
@@ -52,7 +53,7 @@ if (length $proxy && $ua->isa('LWP::UserAgent')) {
 }
 
 my $tome = tome->new($config_file);
-$tome->read_tome_file($tome_tg_file);
+$tome->read_tome_file($tome_tg_file, $tome_dict);
 
 my $karma = karma->new($config_file, $karma_tg_file);
 
@@ -141,10 +142,15 @@ for(;;) {
 
       $lastmsg = $text;
 
-      $tg->sendMessage({
-            chat_id => $upd->{message}{chat}{id},
-            text => $tome->message('')
-         }) unless ($chat_counter{$chat} % 256);
+      unless ($chat_counter{$chat} % 256) {
+         my $tome_msg = $tome->message('');
+         next unless length $tome_msg;
+
+         $tg->sendMessage({
+               chat_id => $upd->{message}{chat}{id},
+               text => $tome_msg
+            });
+      }
 
       next if defined $upd->{message}{forward_date};
 
@@ -179,10 +185,13 @@ for(;;) {
       ) {
          $text = '' if $+{cleanup};
 
+         my $tome_msg = $tome->message($text);
+         next unless length $tome_msg;
+
          $tg->sendMessage({
                chat_id => $upd->{message}{chat}{id},
                reply_to_message_id => $upd->{message}{message_id},
-               text => $tome->message($text)
+               text => $tome_msg
             });
 
          next;
