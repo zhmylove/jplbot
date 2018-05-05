@@ -286,7 +286,7 @@ for(;;) {
                });
          }
 
-         when (/^\s*\/(?:suicide|суицид)\s*$/i) {
+         when (/^\s*(?:suicide|суицид)\s*$/i) {
             my $chat = $upd->{message}{chat}{id};
             my $user = $upd->{message}{from}{id};
             my $mesg = "Ах, какая жалость!";
@@ -295,9 +295,12 @@ for(;;) {
             # If something went wrong, check updates/settings recommendation
             # on the following link:
             # https://core.telegram.org/bots/api#kickchatmember
-            $tg->kickChatMember ({ chat_id => $chat, user_id => $user });
-            $tg->unbanChatMember({ chat_id => $chat, user_id => $user });
-            $tg->sendMessage    ({ chat_id => $chat, text    => $mesg });
+            eval {
+               $tg->kickChatMember ({chat_id => $chat, user_id => $user});
+               $tg->unbanChatMember({chat_id => $chat, user_id => $user});
+            };
+
+            $tg->sendMessage({chat_id => $chat, text => $mesg}) unless $@;
          }
 
          # sudden joke from bot
