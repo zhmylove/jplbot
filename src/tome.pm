@@ -128,6 +128,7 @@ sub read_tome_file($$) {
       close $tome_dh;
       $tome_dict_re = join "|", @dict;
       $tome_dict_re =~ s/\//./g;
+      $tome_dict_re =~ s/\s/./g; # should be only one word per line
       $tome_dict_re = qr/$tome_dict_re/;
       say "Tome dictionary records: " . scalar @dict if @dict;
    }

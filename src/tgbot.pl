@@ -68,8 +68,8 @@ my $lastmsg = '';
 store {}, $tg_count_file unless -r $tg_count_file;
 my %chat_counter = %{retrieve($tg_count_file)};
 
-$SIG{'INT'} = \&shutdown;
-$SIG{'TERM'} = \&shutdown;
+$SIG{'INT'} = \&shut_down;
+$SIG{'TERM'} = \&shut_down;
 $SIG{'USR2'} = \&save_data;
 srand;
 
@@ -81,7 +81,7 @@ sub save_data {
    say "Counters saved to: $tg_count_file";
 }
 
-sub shutdown {
+sub shut_down {
    save_data;
 
    say localtime . " Uptime: " . (time - $start_time);
@@ -90,10 +90,12 @@ sub shutdown {
 }
 
 for(;;) {
-   $updates = $tg->getUpdates ({
-         timeout => 30,
-         $offset ? (offset => $offset) : ()
-      });
+   eval {
+      $updates = $tg->getUpdates ({
+            timeout => 7,
+            $offset ? (offset => $offset) : ()
+         });
+   };
 
    next unless (defined $updates && $updates &&
       (ref $updates eq "HASH") && $updates->{ok});
@@ -237,8 +239,8 @@ for(;;) {
          when (/^\s*\+[+1]+\s*$/i) {
             next unless $is_reply;
 
-            next if
-            $upd->{message}{reply_to_message}{from}{username} =~ /bot$/i;
+            my $username = $upd->{message}{reply_to_message}{from}{username};
+            next if defined $username && $username =~ /bot$/i;
 
             my $text = $karma->inc_karma($src, $repl_author);
             $text =~ s/=[^=\s]*\s/ /;
