@@ -16,6 +16,20 @@ sub get_random(@) {
    return $_[rand @_];
 }
 
+# arg: self groupname
+# ret: rules or empty string
+sub rules($$) {
+   return '' unless defined $_[1];
+
+   given ($_[1]) {
+      when (/^ubuntulinux_group$/i) {
+         return 'Рискуй не читать правила: http://somespecial.ml/ubuntu.html';
+      }
+   }
+
+   return '';
+}
+
 # arg: self txt
 # ret: keyword personal reply
 sub parse($$) {

@@ -123,7 +123,8 @@ for(;;) {
          $tg->sendMessage({
                chat_id => $upd->{message}{chat}{id},
                text =>
-               "En taro " . $upd->{message}{new_chat_member}{first_name} . "!"
+               "En taro " . $upd->{message}{new_chat_member}{first_name} .
+               "! " . keywords->rules($upd->{message}{chat}{username})
             });
 
          next;
@@ -224,6 +225,15 @@ for(;;) {
                   chat_id => $upd->{message}{chat}{id},
                   text => $top
                });
+         }
+
+         when (/^rules\s*$/i) {
+
+            my $rules = keywords->rules($upd->{message}{chat}{username});
+            $tg->sendMessage({
+                  chat_id => $upd->{message}{chat}{id},
+                  text => $rules
+               }) if length $rules // '';
          }
 
          when (/^(?:karma|карма)\s*$/i) {
