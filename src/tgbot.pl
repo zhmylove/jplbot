@@ -246,7 +246,7 @@ for(;;) {
                });
          }
 
-         when (/^\s*\+[+1]+\s*$/i) {
+         when (/^\s*\+[+1]+\s*/i) {
             next unless $is_reply;
 
             my $username = $upd->{message}{reply_to_message}{from}{username};
@@ -264,7 +264,7 @@ for(;;) {
                });
          }
 
-         when (/^\s*\-[-1]+\s*$/i) {
+         when (/^\s*\-[-1]+\s*/i) {
             next unless $is_reply;
 
             next if
