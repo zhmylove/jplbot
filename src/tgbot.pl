@@ -63,7 +63,6 @@ my $start_time = time;
 my $offset  = 0;
 my $updates = 0;
 my $starting = 1;
-my $lastmsg = '';
 
 store {}, $tg_count_file unless -r $tg_count_file;
 my %chat_counter = %{retrieve($tg_count_file)};
@@ -124,7 +123,7 @@ for(;;) {
                chat_id => $upd->{message}{chat}{id},
                text =>
                "En taro " . $upd->{message}{new_chat_member}{first_name} .
-               "! " . keywords->rules($upd->{message}{chat}{username})
+               "!\n" . keywords->rules($upd->{message}{chat}{username})
             });
 
          next;
@@ -134,16 +133,15 @@ for(;;) {
 
       # highest priority for layout quickfix message
       if ($text =~ /^!!\s*(.*)/) {
-         $lastmsg = $1 || $lastmsg;
+         my $xlate = $1 || $upd->{message}{reply_to_message}{text};
+         next unless defined $xlate && length $xlate;
 
          $tg->sendMessage({
                chat_id => $upd->{message}{chat}{id},
-               text => xlate->cry($lastmsg) || next
+               text => xlate->cry($xlate) || next
             });
          next;
       }
-
-      $lastmsg = $text;
 
       unless ($chat_counter{$chat} % 256) {
          my $tome_msg = $tome->message('');
@@ -253,7 +251,7 @@ for(;;) {
             next if defined $username && $username =~ /bot$/i;
 
             my $text = $karma->inc_karma($src, $repl_author);
-            $text =~ s/=[^=\s]*\s/ /;
+            $text =~ s/=[^=\s]*\s(?!.*=)/ /;
             $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
 
@@ -264,14 +262,14 @@ for(;;) {
                });
          }
 
-         when (/^\s*\-[-1]+\s*/i) {
+         when (/^\s*(?:-[-1]+|—)\s*/i) {
             next unless $is_reply;
 
             next if
             $upd->{message}{reply_to_message}{from}{username} =~ /bot$/i;
 
             my $text = $karma->dec_karma($src, $repl_author);
-            $text =~ s/=[^=\s]*\s/ /;
+            $text =~ s/=[^=\s]*\s(?!.*=)/ /;
             $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
 

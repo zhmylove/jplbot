@@ -10,6 +10,7 @@ The full command list follows:
 * user: +1
 * user: -1
 * user: --
+* user: —
 * fortune        -- show random thesis from fortune(6).
 * poem           -- show some depressive suicidal rhymes.
 * http://uri     -- show information about first found URI.
@@ -19,7 +20,7 @@ The full command list follows:
 * g:txt          -- transform txt into link to Google and show the title.
 * sayto/user/txt -- send txt to user's private when bot founds him or her presence notification.
 * ! txt          -- translate txt from en-ru and vice versa.
-* !! [txt]       -- xlate layout en-ru and vice versa of the txt or the last message.
+* !! [txt]       -- xlate layout en-ru and vice versa of the txt or the reply (jabber) or last message (telegram).
 
 #### Jabber specific commands
 * add-kicker     -- grant the user kicker privileges.
