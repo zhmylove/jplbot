@@ -265,8 +265,8 @@ for(;;) {
          when (/^\s*(?:-[-1]+|—)\s*/i) {
             next unless $is_reply;
 
-            next if
-            $upd->{message}{reply_to_message}{from}{username} =~ /bot$/i;
+            my $username = $upd->{message}{reply_to_message}{from}{username};
+            next if defined $username && $username =~ /bot$/i;
 
             my $text = $karma->dec_karma($src, $repl_author);
             $text =~ s/=[^=\s]*\s(?!.*=)/ /;
