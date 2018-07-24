@@ -74,7 +74,6 @@ srand;
 
 sub save_data {
    $tome->save_tome_file();
-   $karma->save_karma_file();
 
    store \%chat_counter, $tg_count_file and
    say "Counters saved to: $tg_count_file";

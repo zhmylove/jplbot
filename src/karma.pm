@@ -11,9 +11,11 @@ binmode STDOUT, ':utf8';
 package karma;
 
 use Storable;
+use DB_File;
+use Encode qw;encode decode is_utf8;;
 
 my $karmafile     = '/tmp/karma';
-my %karma         = ();
+my %karma_db      = ();
 my $reject_time   = 7;
 my $last_like_max = 3;
 my %last_like;
@@ -39,19 +41,14 @@ sub new($$;$) {
    $last_like_max = $cfg{last_like_max} if defined $cfg{last_like_max};
    $reject_time   = $cfg{karma_reject_time} if defined $cfg{karma_reject_time};
 
-   store {}, $karmafile unless -r $karmafile;
-   %karma = %{retrieve($karmafile)};
-   say "Karma records: " . keys %karma if scalar keys %karma;
+   tie (
+      %karma_db, "DB_File", "$karmafile.db", O_CREAT | O_RDWR, 0666, $DB_BTREE
+   ) or die $!;
+
+   say "Karma records: " . keys %karma_db if scalar keys %karma_db;
 
    $initialized = 1;
    return bless {}, $self;
-}
-
-# arg: self
-sub save_karma_file($) {
-   return unless $initialized;
-
-   store \%karma, $karmafile and say "Karma saved to: $karmafile";
 }
 
 # arg: self top_count
@@ -61,12 +58,14 @@ sub get_top($$) {
 
    my $topN = shift // 10;
    $topN = 10 if $topN eq "" || $topN < 1 || $topN > 25;
-   $topN = keys %karma if $topN > keys %karma;
+   $topN = keys %karma_db if $topN > keys %karma_db;
 
-   $top .= "$_($karma{$_}), " for (
-      sort {$karma{$b} <=> $karma{$a}} keys %karma
+   $top .= "$_($karma_db{$_}), " for (
+      sort {$karma_db{$b} <=> $karma_db{$a}} keys %karma_db
    )[0..$topN-1];
    $top =~ s/, $//;
+
+   $top = decode('utf-8', $top) unless is_utf8($top);
 
    return $top;
 }
@@ -110,7 +109,7 @@ sub get_karma($$;$) {
    my $src  = shift // return -1;
    my $dst  = shift // $src;
 
-   my $karma = $karma{lc($dst)} || 0;
+   my $karma = $karma_db{encode 'utf-8', lc $dst} ||= 0;
 
    return "твоя карма: $karma" if $src eq $dst;
    return "карма $dst $karma";
@@ -128,8 +127,9 @@ sub inc_karma($$$) {
    return "нельзя изменять карму так часто!" unless
    allowed_like($src, $dst);
 
-   $karma{lc($dst)}++;
-   return "поднял карму $dst до " . $karma{lc($dst)};
+   my $rc = ++$karma_db{encode 'utf-8', lc $dst};
+
+   return "поднял карму $dst до $rc";
 }
 
 # arg: self src dst
@@ -143,8 +143,9 @@ sub dec_karma($$$) {
    return "нельзя изменять карму так часто!" unless
    allowed_like($src, $dst);
 
-   $karma{lc($dst)}--;
-   return "опустил карму $dst до " . $karma{lc($dst)};
+   my $rc = --$karma_db{encode 'utf-8', lc $dst};
+
+   return "опустил карму $dst до $rc";
 }
 
 1;

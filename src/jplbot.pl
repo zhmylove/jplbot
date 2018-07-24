@@ -107,7 +107,6 @@ sub save_data {
    store \%kicks, $kick_file and say "Kicks saved to: $kick_file";
 
    $tome->save_tome_file();
-   $karma->save_karma_file();
 }
 
 sub get_jid {
