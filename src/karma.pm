@@ -10,17 +10,38 @@ binmode STDOUT, ':utf8';
 
 package karma;
 
-use Storable;
+use File::Copy;
 use DB_File;
 use Encode qw;encode decode is_utf8;;
 
 my $karmafile     = '/tmp/karma';
 my %karma_db      = ();
+my $karma_fh;
 my $reject_time   = 7;
 my $last_like_max = 3;
 my %last_like;
 
 my $initialized   = 0;
+
+# arg: self
+sub backup_karma($) {
+   return unless $initialized;
+
+   $karma_fh->sync() == 0 or die "karma sync != 0";
+
+   if (keys %karma_db > 0) {
+      copy "$karmafile.db", "$karmafile.bak" or die $!;
+   }
+
+   print "Karma backed up to: $karmafile.bak\n";
+}
+
+# arg: self
+sub shut_down($) {
+   return unless $initialized;
+   undef $karma_fh;
+   untie %karma_db;
+}
 
 # arg: self cfg_file karma_file
 sub new($$;$) {
@@ -41,7 +62,7 @@ sub new($$;$) {
    $last_like_max = $cfg{last_like_max} if defined $cfg{last_like_max};
    $reject_time   = $cfg{karma_reject_time} if defined $cfg{karma_reject_time};
 
-   tie (
+   $karma_fh = tie (
       %karma_db, "DB_File", "$karmafile.db", O_CREAT | O_RDWR, 0666, $DB_BTREE
    ) or die $!;
 

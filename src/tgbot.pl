@@ -73,6 +73,9 @@ $SIG{'USR2'} = \&save_data;
 srand;
 
 sub save_data {
+   say localtime . " Saving data...";
+
+   $karma->backup_karma();
    $tome->save_tome_file();
 
    store \%chat_counter, $tg_count_file and
@@ -81,6 +84,7 @@ sub save_data {
 
 sub shut_down {
    save_data;
+   $karma->shut_down();
 
    say localtime . " Uptime: " . (time - $start_time);
 

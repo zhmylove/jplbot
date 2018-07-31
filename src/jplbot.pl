@@ -89,8 +89,8 @@ my $rb = "[$rsymbols]";
 my $rB = "[^$rsymbols]";
 my $debug_request = 0;
 
-$SIG{'INT'} = \&shutdown;
-$SIG{'TERM'} = \&shutdown;
+$SIG{'INT'} = \&shut_down;
+$SIG{'TERM'} = \&shut_down;
 $SIG{'USR1'} = \&debug;
 $SIG{'USR2'} = \&save_data;
 srand;
@@ -103,6 +103,10 @@ sub debug {
 }
 
 sub save_data {
+   say localtime . " Saving data...";
+
+   $karma->backup_karma();
+
    store \%sayto, $saytofile and say "Sayto saved to: $saytofile";
    store \%kicks, $kick_file and say "Kicks saved to: $kick_file";
 
@@ -117,8 +121,9 @@ sub get_jid {
    return $jid_DB{"jid_$room"}->{$nick} // $nick;
 }
 
-sub shutdown {
+sub shut_down {
    save_data;
+   $karma->shut_down();
 
    say localtime . " Uptime: " . (time - $start_time);
 
@@ -631,7 +636,7 @@ my $bot = Net::Jabber::Bot->new(
    JidDB => \%jid_DB,
    SayTo => \&say_to,
    SayToDB => \%sayto,
-   shutdown => \&save_data,
+   shutdown => \&shut_down,
 );
 
 $bot->max_messages_per_hour($max_messages_per_hour);
