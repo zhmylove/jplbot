@@ -77,6 +77,11 @@ $SIG{'TERM'} = \&shut_down;
 $SIG{'USR2'} = \&save_data;
 srand;
 
+# Ignore API errors on sendMessage
+sub try_send_message {
+   eval { $tg->sendMessage(@_) }
+}
+
 # Save data periodically
 # a0: signal name
 # rc: -
@@ -136,7 +141,7 @@ for(;;) {
       $chat_counter{$chat}++;
 
       if (defined $upd->{message}{new_chat_member}) {
-         $tg->sendMessage({
+         try_send_message({
                chat_id => $upd->{message}{chat}{id},
                text =>
                "En taro " . $upd->{message}{new_chat_member}{first_name} .
@@ -153,7 +158,7 @@ for(;;) {
          my $xlate = $1 || $upd->{message}{reply_to_message}{text};
          next unless defined $xlate && length $xlate;
 
-         $tg->sendMessage({
+         try_send_message({
                chat_id => $upd->{message}{chat}{id},
                text => xlate->cry($xlate) || next
             });
@@ -163,7 +168,7 @@ for(;;) {
       unless ($chat_counter{$chat} % 256) {
          my $tome_msg = $tome->message('');
 
-         $tg->sendMessage({
+         try_send_message({
                chat_id => $upd->{message}{chat}{id},
                text => $tome_msg
             }) if length $tome_msg;
@@ -205,7 +210,7 @@ for(;;) {
          my $tome_msg = $tome->message($text);
          next unless length $tome_msg;
 
-         $tg->sendMessage({
+         try_send_message({
                chat_id => $upd->{message}{chat}{id},
                reply_to_message_id => $upd->{message}{message_id},
                text => $tome_msg
@@ -220,7 +225,7 @@ for(;;) {
             reply_to_message_id => $upd->{message}{message_id}
          ) if $personal;
 
-         $tg->sendMessage({
+         try_send_message({
                chat_id => $upd->{message}{chat}{id},
                @reply_to_message_id,
                text => $reply
@@ -236,7 +241,7 @@ for(;;) {
             $top =~ s/=[^=\s,]*?([()\s,])/$1/g;
             $top =~ s/=/ /g;
 
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   text => $top
                });
@@ -245,7 +250,7 @@ for(;;) {
          when (/^rules\s*$/i) {
 
             my $rules = keywords->rules($upd->{message}{chat}{username});
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   text => $rules
                }) if length $rules // '';
@@ -254,7 +259,7 @@ for(;;) {
          when (/^(?:karma|карма)\s*$/i) {
             my $karma = $karma->get_karma($src);
 
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   reply_to_message_id => $upd->{message}{message_id},
                   text => ucfirst($karma)
@@ -272,7 +277,7 @@ for(;;) {
             $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
 
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   reply_to_message_id => $upd->{message}{message_id},
                   text => ucfirst($text)
@@ -290,7 +295,7 @@ for(;;) {
             $text =~ s/(?:\s=|=\s)/ /;
             $text =~ s/=/ /g;
 
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   reply_to_message_id => $upd->{message}{message_id},
                   text => ucfirst($text)
@@ -302,7 +307,7 @@ for(;;) {
 
             my $text = $2;
             $text =~ s/\s+/+/g;
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   text => "https://www.google.ru/search?q=$text"
                });
@@ -312,7 +317,7 @@ for(;;) {
             my $text = $tran->translate($1);
             next unless $text;
 
-            $tg->sendMessage({
+            try_send_message({
                   chat_id => $upd->{message}{chat}{id},
                   reply_to_message_id => $upd->{message}{message_id},
                   text => ucfirst($text)
@@ -333,7 +338,7 @@ for(;;) {
                $tg->unbanChatMember({chat_id => $chat, user_id => $user});
             };
 
-            $tg->sendMessage({chat_id => $chat, text => $mesg}) unless $@;
+            try_send_message({chat_id => $chat, text => $mesg}) unless $@;
          }
 
          # sudden joke from bot
@@ -341,7 +346,7 @@ for(;;) {
             my $chat = $upd->{message}{chat}{id};
             my $joke = sweets->fetch_xkcdb_joke || 
                         "Ой, как-то не выходит пошутить";
-            $tg->sendMessage({ chat_id => $chat, text => $joke });
+            try_send_message({ chat_id => $chat, text => $joke });
          }
 
          when (/\b(?:баш|шутк(?:а|у))\b/i) {
@@ -350,7 +355,7 @@ for(;;) {
             my $chat = $upd->{message}{chat}{id};
             my $joke = sweets->fetch_bash_joke || 
                         "Ой, как-то не выходит пошутить";
-            $tg->sendMessage({ chat_id => $chat, text => $joke });
+            try_send_message({ chat_id => $chat, text => $joke });
          }
 
          when (/^\s*(?:weather|погода)(?:\s+(.*?))?\s*$/i) {
@@ -360,7 +365,7 @@ for(;;) {
             if ($url) {
                 $tg->sendPhoto({ chat_id => $chat, photo => $url });
             } else {
-                $tg->sendMessage({ 
+                try_send_message({ 
                         chat_id => $chat,
                         text    => "Поломать меня решил?!"
                     });
