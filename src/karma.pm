@@ -39,6 +39,11 @@ sub backup_karma($) {
 # arg: self
 sub shut_down($) {
    return unless $initialized;
+
+   # just in case
+   # Perl Core Modules, I do really believe in you, but...
+   $karma_fh->sync() == 0 or die "karma sync != 0";
+
    undef $karma_fh;
    untie %karma_db;
 }

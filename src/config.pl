@@ -31,6 +31,8 @@ $cfg{tg_name} = '@korg_bot';
 $cfg{yandex_api} = 'key';
 # Optionally set here SOCKS proxy like 'socks://[user:pass@]host:port';
 $cfg{proxy} = '';
+# Optionally set here LocalAddr for LWP
+$cfg{local_addr} = '';
 
 # Maximum number of messages per hour
 $cfg{max_messages_per_hour} = 150;

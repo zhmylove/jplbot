@@ -40,17 +40,22 @@ my $karma_tg_file = $cfg{karma_tg_file}   // '/tmp/karma_tg';
 my $tg_count_file = $cfg{tg_count_file}   // '/tmp/count_tg';
 my $yandex_api    = $cfg{yandex_api}      // 'yandex_api';
 my $proxy         = $cfg{proxy}           // '';
+my $local_address = $cfg{local_address}   // '';
 
 my $tg = WWW::Telegram::BotAPI->new(token=>$token, force_lwp=>1);
 die "Name mismatch: $name" if $name ne $tg->getMe->{result}{first_name};
 
 my $ua = $tg->agent;
-if (length $proxy && $ua->isa('LWP::UserAgent')) {
-   require LWP::Protocol::socks;
-   $ua->proxy([qw.http https.] => $proxy);
-} else {
-   die "Error: $proxy LWP::UserAgent not in use!";
+if (length $proxy > 0) {
+   if ($ua->isa('LWP::UserAgent')) {
+      require LWP::Protocol::socks;
+      $ua->proxy([qw.http https.] => $proxy);
+   } else {
+      die "Error: $proxy LWP::UserAgent not in use!";
+   }
 }
+
+$ua->local_address($local_address) if length $local_address;
 
 my $tome = tome->new($config_file);
 $tome->read_tome_file($tome_tg_file, $tome_dict);
@@ -72,18 +77,27 @@ $SIG{'TERM'} = \&shut_down;
 $SIG{'USR2'} = \&save_data;
 srand;
 
+# Save data periodically
+# a0: signal name
+# rc: -
 sub save_data {
+   my $signum = $_[0];
    say localtime . " Saving data...";
 
-   $karma->backup_karma();
+   $karma->backup_karma() if $signum; # not when shutting down
+
    $tome->save_tome_file();
 
    store \%chat_counter, $tg_count_file and
    say "Counters saved to: $tg_count_file";
 }
 
+# Shutdown routine
+# args: -
+# rc: -
 sub shut_down {
-   save_data;
+   save_data();
+
    $karma->shut_down();
 
    say localtime . " Uptime: " . (time - $start_time);
