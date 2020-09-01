@@ -30,11 +30,13 @@ sub fetch_bash_joke {
        $response->is_success && $response->content_type eq 'text/html'
     );
 
-    my $bash = decode("Windows-1251", $response->content);
-    $bash =~ m/<div class="quote">.*?<div class="text">(.*?)<\/div>/s;
+    my $bash = decode("UTF-8", $response->content);
+    $bash =~ m/<div class="quote__body">(.*?)<\/div>/s;
     my $quote = $1 // "";
 
     $quote =~ s/<br.*?>/\n/g;
+    $quote =~ s/^\s*//s;
+    $quote =~ s/\s+$//s;
 
     # Can be replaced with linear replacement algorithm, 
     # but for this domain problem regex performance is enough and another
