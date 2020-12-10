@@ -27,8 +27,6 @@ $cfg{password} = 'password';
 $cfg{token} = 'token';
 # Username for Telegram
 $cfg{tg_name} = '@korg_bot';
-# Yandex API key for translator
-$cfg{yandex_api} = 'key';
 # Optionally set here SOCKS proxy like 'socks://[user:pass@]host:port';
 $cfg{proxy} = '';
 # Optionally set here LocalAddr for LWP
