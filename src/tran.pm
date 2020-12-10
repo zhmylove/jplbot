@@ -19,6 +19,7 @@ my $FILE_SID = '/tmp/jplbot_sid.dat';
 
 sub new($) {
    my $self = shift;
+   _load_SID();
 
    return bless {}, $self;
 }
@@ -54,7 +55,8 @@ $ua->env_proxy;
 
 sub _load_SID() {
    return if defined $SID;
-   my $ref = lock_retrieve($FILE_SID);
+   my $ref;
+   eval { $ref = lock_retrieve($FILE_SID) };
    return unless defined $ref;
    $SID = $ref->{SID};
    $SID_time = $ref->{SID_time};
